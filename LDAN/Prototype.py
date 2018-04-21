@@ -14,7 +14,7 @@ import torchvision
 import os
 import numpy as np
 import matplotlib
-#matplotlib.use('agg')
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import torchvision.utils as tutils
 import imageio
@@ -39,7 +39,7 @@ if torch.cuda.is_available():
 def var(x):
     if IS_CUDA:
         x = x.cuda()
-    return Variable(x, requires_grad=True)
+    return Variable(x)
 
 def show(img):
     npimg = img.numpy()
@@ -295,11 +295,11 @@ show(dreal[0])
 
 # In[21]:
 
-
+realImagePath = '/home/bsonawane/Thesis/LightEstimation/SIRFS/realData'
 # Test matlab generated H5 file
-hf = h5py.File('../../Light-Estimation/datasets/realImagesSH/data_1.h5', 'r')
+hf = h5py.File('./data/realImagesSH/data_1.h5', 'r')
 print hf.keys()
-syn1 = hf['/Image']
+rImg = hf['/Image']
 lighting = hf['/Lighting']
 normal = hf['/Normal']
 height = hf['/Height']
@@ -308,22 +308,57 @@ finalLoss = hf['/FinalLoss']
 shading = hf['/Shading']
 
 
+'''
+folders = os.listdir(realImagePath)
+realH5 = []
+for fold in folders:
+    npath = realImagePath+'/'+fold
+    files = os.listdir(npath)
+    for file in files:
+        nFile = npath+'/'+file
+        print 'FILE:', nFile
+        realH5.append(nFile)
+
+
+# Load data from H5 Files
+
+for file in realH5:
+    hf = h5py.File(file, 'r')
+    print hf.keys()
+    rImg = hf['/Image']
+    lighting = hf['/Lighting']
+    normal = hf['/Normal']
+    height = hf['/Height']
+    reflectance = hf['/Reflectance']
+    finalLoss = hf['/FinalLoss']
+    shading = hf['/Shading']
+    
+    rImg = np.concatenate((rImg, np.array(syn1[:,:,:])))
+    lighting = np.concatenate((lighting, np.array(syn1[:,:,:])))
+    normal = np.concatenate((normal, np.array(syn1[:,:,:])))
+    shading = np.concatenate((shading, np.array(syn1[:,:,:])))
+
+
+ 
+'''
+
+
 # In[22]:
 
 
 print lighting.shape
-print syn1.shape
+print rImg.shape
 print normal.shape
 print height.shape
 print reflectance.shape
 print finalLoss.shape
 print shading.shape
-realImage = torch.utils.data.DataLoader(syn1, batch_size= global_batch_size, shuffle = False)
+realImage = torch.utils.data.DataLoader(rImg, batch_size= global_batch_size, shuffle = False)
 realSH = torch.utils.data.DataLoader(lighting, batch_size= global_batch_size, shuffle = False)
 rNormal = torch.utils.data.DataLoader(normal, batch_size= global_batch_size, shuffle = False)
-rHeight = torch.utils.data.DataLoader(height, batch_size= global_batch_size, shuffle = False)
-rReflectance = torch.utils.data.DataLoader(reflectance, batch_size= global_batch_size, shuffle = False)
-rFinalLoss = torch.utils.data.DataLoader(finalLoss, batch_size= global_batch_size, shuffle = False)
+#rHeight = torch.utils.data.DataLoader(height, batch_size= global_batch_size, shuffle = False)
+#rReflectance = torch.utils.data.DataLoader(reflectance, batch_size= global_batch_size, shuffle = False)
+#rFinalLoss = torch.utils.data.DataLoader(finalLoss, batch_size= global_batch_size, shuffle = False)
 rShading = torch.utils.data.DataLoader(shading, batch_size= global_batch_size, shuffle = False)
 
 
@@ -332,7 +367,7 @@ rShading = torch.utils.data.DataLoader(shading, batch_size= global_batch_size, s
 
 dreal = next(iter(realImage))
 print dreal.shape
-show(dreal[0])
+#show(dreal[0])
 
 
 # In[24]:
@@ -340,7 +375,7 @@ show(dreal[0])
 
 dreal = next(iter(rNormal))
 print dreal.shape
-show(denorm(dreal[0]))
+#show(denorm(dreal[0]))
 
 
 # In[25]:
@@ -557,12 +592,17 @@ class Discriminator(nn.Module):
 # In[30]:
 
 
-#featureNet = ResNet(BasicBlock, [2, 2, 2, 2], 27)
-featureNet = BaseSimpleFeatureNet()
+featureNet = ResNet(BasicBlock, [2, 2, 2, 2], 27)
+# featureNet = BaseSimpleFeatureNet()
 lightingNet = LightingNet()
 D = Discriminator()
-R = LightingNet()
+R =  ResNet(BasicBlock, [2, 2, 2, 2], 27)
+ #BaseSimpleFeatureNet()
 
+featureNet = featureNet.cuda()
+lightingNet = lightingNet.cuda()
+D = D.cuda()
+R = R.cuda()
 
 # In[31]:
 
@@ -600,8 +640,8 @@ def train(fNet, lNet, num_epochs = 3):
             #print 's1', s1.shape
             batchSize = s1.shape[0]
             #print batchSize
-            s1 = var(s1).type(torch.FloatTensor)
-            s2 = var(s2).type(torch.FloatTensor)
+            s1 = var(s1) #.type(torch.FloatTensor)
+            s2 = var(s2) #.type(torch.FloatTensor)
             l = var(l)
             #s1 = s1.transpose(1, 3)
             output = fNet(s1)
@@ -620,6 +660,10 @@ def train(fNet, lNet, num_epochs = 3):
             lOpt.step()
             tLoss += Floss
         print 'Epoch:', epoch, 'Loss:', tLoss.data[0]
+        if epoch % 100 == 0:
+            torch.save(featureNet.state_dict(), './models/featureNet_'+str(epoch/100)+'.pkl')
+            torch.save(lightingNet.state_dict(), './models/lightingNet_'+str(epoch/100)+'.pkl')
+
     # return featureNet
 
 def predict(fNet, lNet, Input):
@@ -644,8 +688,11 @@ def predictAllSynthetic(fNet, data):
 
 # In[3]:
 
+#featureNet.load_state_dict(torch.load('./featureNet.pkl'))
+#lightingNet.load_state_dict(torch.load('./lightingNet.pkl'))
 
-train(featureNet, lightingNet, 1)
+
+train(featureNet, lightingNet, 701)
 
 
 # In[ ]:
@@ -665,9 +712,8 @@ torch.save(lightingNet.state_dict(), './lightingNet.pkl')
 # In[ ]:
 
 
-featureNet.load_state_dict(torch.load('./featureNet.pkl'))
-lightingNet.load_state_dict(torch.load('./lightingNet.pkl'))
-
+#featureNet.load_state_dict(torch.load('./featureNet.pkl'))
+#lightingNet.load_state_dict(torch.load('./lightingNet.pkl'))
 
 # In[ ]:
 
@@ -690,56 +736,92 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, numDTrainer= 1, numGTrainer = 1, 
     rNet_opt = torch.optim.Adadelta(rNet.parameters(), lr = 0.0002)
     lNet_opt = torch.optim.Adadelta(lNet.parameters(), lr = 0.0002)
     D_opt    = torch.optim.RMSprop(D.parameters(), lr = 0.0002)
-    
-    for rD, rL in zip(rData, rLabel):
-        image = var(rD).type(torch.FloatTensor)
-        rL = var(rL).type(torch.FloatTensor)
-        batch_size = image.size(0)
-        print batch_size
-        # Train the Discriminator
-        for k in range(0, numDTrainer):
-            # Randomly peack fs to train Discriminator
-            rFS = random.randint(0, len(fs)-1)
-            print fs[rFS].shape
-            D_real = D(fs[rFS])
-            print D_real.shape
-            # Pass real data through generator
-            G_fake = rNet(image)
-            D_fake = D(G_fake)
-            # Loss for Discriminator
-            #D_real_loss = lossGAN(D_real, var(torch.ones(batch_size, 1)))
-            #D_fake_loss = lossCriterion(D_fake, var(-1 * torch.ones(batch_size, 1)))
-            D_real_loss = GANLoss(D_real)
-            D_fake_loss = GANLoss(D_fake)
-            D_loss = D_real_loss - D_fake_loss
+    firstCallD = False
+    firstCallG = False
+    for epoch in range(0, num_epoch):
+        GLoss_D = 0.0
+        DLoss_D = 0.0
+        for rD, rL in zip(rData, rLabel):
+            image = var(rD).type(torch.cuda.FloatTensor)
+            #print type(image)
+            rL = var(rL).type(torch.cuda.FloatTensor)
+            batch_size = image.size(0)
+            #print batch_size
+            # Train the Discriminator
+            for k in range(0, numDTrainer):
+                # Randomly peack fs to train Discriminator
+                rFS = random.randint(0, len(fs)-1)
+                #print fs[rFS].shape
+                D_real = D(fs[rFS])
+                print D_real.size()
+                print image.size()
+                # Pass real data through generator
+                G_fake = rNet(image)
+                D_fake = D(G_fake)
+                # Loss for Discriminator
+                #D_real_loss = lossGAN(D_real, var(torch.ones(batch_size, 1)))
+                #D_fake_loss = lossCriterion(D_fake, var(-1 * torch.ones(batch_size, 1)))
+                D_real_loss = GANLoss(D_real)
+                D_fake_loss = GANLoss(D_fake)
+                print 'DLOSS:', D_real_loss.data[0], ' ', D_fake_loss.data[0]
+                D_loss = -D_real_loss + D_fake_loss # -ve as we need to maximize
+                
+                # Backprop Discriminator
+                D.zero_grad()
+                if firstCallD == True:
+                    D_loss.backward(retain_graph=True)
+                    firstCallD = False
+                else:
+                    D_loss.backward(retain_graph = True)
+                D_opt.step()
             
-            # Backprop Discriminator
-            D.zero_grad()
-            D_loss.backward()
-            D_opt.step()
-        
-        # Train the Generator
-        for k in range(0, numGTrainer):
-            G_fake = rNet(image)
-            D_fake = D(G_fake)
-            # Generator Loss
-            G_predict = lNet(G_fake)
-            print type(G_predict), type(rL)
-            #G_loss = lossCriterion(D_fake, var(torch.ones(batch_size, 1))) + MU * regressionLossSynthetic(G_predict, rLabel)
-            G_loss = -GANLoss(D_fake)
-            #+ MU * regressionLossSynthetic(G_predict, rL)
-        
-            lNet.zero_grad()
-            rNet.zero_grad()
-            G_loss.backward()
-            rNet_opt.step()
-            lNet_opt.step()
-            
-    print 'Epoch [{}/{}], Discriminator {:.4f}, Generator {:.4f}'.format(epoch+1, num_epoch, D_loss.data[0], G_loss[0].data)
+            # Train the Generator
+            for k in range(0, numGTrainer):
+                G_fake = rNet(image)
+                D_fake = D(G_fake)
+                # Generator Loss
+                G_predict = lNet(G_fake)
+                #print type(G_predict), type(rL)
+                #G_loss = lossCriterion(D_fake, var(torch.ones(batch_size, 1))) + MU * regressionLossSynthetic(G_predict, rLabel)
+                G_loss = -GANLoss(D_fake) + MU * regressionLossSynthetic(G_predict, rL).sum()
+                #G_loss = MU * regressionLossSynthetic(G_predict, rL).sum()
+ 
+                lNet.zero_grad()
+                rNet.zero_grad()
+                if firstCallG == True:
+                    G_loss.backward(retain_graph=True)
+                    firstCallG = False
+                else:
+                    G_loss.backward(retain_graph = True)
+                rNet_opt.step()
+                #lNet_opt.step()
+            GLoss_D += G_loss.data[0]
+            DLoss_D += D_loss.data[0]
+        print 'Epoch [{}/{}], Discriminator {}, Generator {}'.format(epoch+1, num_epoch, DLoss_D, GLoss_D)
+        if epoch % 100 == 0:
+            torch.save(lightingNet.state_dict(), './models/GAN_LNet_'+str(epoch/100)+'.pkl')
+            torch.save(D.state_dict(), './models/Discriminator._'+str(epoch/100)+'pkl')
+            torch.save(R.state_dict(), './models/Generator_'+str(epoch/100)+'.pkl')
+
+
 
 
 # In[ ]:
 
 
-trainGAN(lightingNet, featureNet, D, fs, realImage, realSH)
+#lightingNet.load_state_dict(torch.load('./GAN_LNet.pkl'))
+#D.load_state_dict(torch.load('./Discriminator.pkl'))
+#R.load_state_dict(torch.load('./Generator.pkl'))
+
+
+
+
+trainGAN(lightingNet, R, D, fs, realImage, realSH, num_epoch = 4001)
+
+torch.save(lightingNet.state_dict(), './GAN_LNet.pkl')
+torch.save(D.state_dict(), './Discriminator.pkl')
+torch.save(R.state_dict(), './Generator.pkl')
+
+
+
 
