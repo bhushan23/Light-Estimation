@@ -295,7 +295,9 @@ show(dreal[0])
 
 # In[21]:
 
+
 realImagePath = '/home/bsonawane/Thesis/LightEstimation/SIRFS/realData'
+'''
 # Test matlab generated H5 file
 hf = h5py.File('./data/realImagesSH/data_1.h5', 'r')
 print hf.keys()
@@ -306,9 +308,9 @@ height = hf['/Height']
 reflectance = hf['/Reflectance']
 finalLoss = hf['/FinalLoss']
 shading = hf['/Shading']
-
-
 '''
+
+
 folders = os.listdir(realImagePath)
 realH5 = []
 for fold in folders:
@@ -319,28 +321,34 @@ for fold in folders:
         print 'FILE:', nFile
         realH5.append(nFile)
 
-
 # Load data from H5 Files
-
+firstTime = True
 for file in realH5:
     hf = h5py.File(file, 'r')
     print hf.keys()
-    rImg = hf['/Image']
-    lighting = hf['/Lighting']
-    normal = hf['/Normal']
-    height = hf['/Height']
-    reflectance = hf['/Reflectance']
-    finalLoss = hf['/FinalLoss']
-    shading = hf['/Shading']
+    rImg1 = hf['/Image']
+    lighting1 = hf['/Lighting']
+    normal1 = hf['/Normal']
+    #height = hf['/Height']
+    #reflectance = hf['/Reflectance']
+    #finalLoss = hf['/FinalLoss']
+    shading1 = hf['/Shading']
     
-    rImg = np.concatenate((rImg, np.array(syn1[:,:,:])))
-    lighting = np.concatenate((lighting, np.array(syn1[:,:,:])))
-    normal = np.concatenate((normal, np.array(syn1[:,:,:])))
-    shading = np.concatenate((shading, np.array(syn1[:,:,:])))
+    if firstTime:
+        rImg = np.array(rImg1[:,:,:])
+        lighting = np.array(lighting1[:,:])
+        normal = np.array(normal1[:,:,:])
+        shading = np.array(shading1[:,:,:])
+        firstTime = False
+    else:
+        rImg = np.concatenate((rImg, np.array(rImg1[:,:,:])))
+        lighting = np.concatenate((lighting, np.array(lighting1[:,:])))
+        normal = np.concatenate((normal, np.array(normal1[:,:,:])))
+        shading = np.concatenate((shading, np.array(shading1[:,:,:])))
 
 
  
-'''
+
 
 
 # In[22]:
@@ -349,9 +357,9 @@ for file in realH5:
 print lighting.shape
 print rImg.shape
 print normal.shape
-print height.shape
-print reflectance.shape
-print finalLoss.shape
+#print height.shape
+#print reflectance.shape
+#print finalLoss.shape
 print shading.shape
 realImage = torch.utils.data.DataLoader(rImg, batch_size= global_batch_size, shuffle = False)
 realSH = torch.utils.data.DataLoader(lighting, batch_size= global_batch_size, shuffle = False)
@@ -592,12 +600,12 @@ class Discriminator(nn.Module):
 # In[30]:
 
 
-featureNet = ResNet(BasicBlock, [2, 2, 2, 2], 27)
-# featureNet = BaseSimpleFeatureNet()
+#featureNet = ResNet(BasicBlock, [2, 2, 2, 2], 27)
+featureNet = BaseSimpleFeatureNet()
 lightingNet = LightingNet()
 D = Discriminator()
-R =  ResNet(BasicBlock, [2, 2, 2, 2], 27)
- #BaseSimpleFeatureNet()
+#R =  ResNet(BasicBlock, [2, 2, 2, 2], 27)
+R = BaseSimpleFeatureNet()
 
 featureNet = featureNet.cuda()
 lightingNet = lightingNet.cuda()
@@ -668,7 +676,7 @@ def train(fNet, lNet, num_epochs = 3):
 
 def predict(fNet, lNet, Input):
     val = next(iter(Input))
-    val = var(val)
+    val = var(val).type(torch.FloatTensor)
     
     out = lNet(fNet(val))
     tLabel = var(next(iter(synValLabel)))
@@ -691,20 +699,22 @@ def predictAllSynthetic(fNet, data):
 #featureNet.load_state_dict(torch.load('./featureNet.pkl'))
 #lightingNet.load_state_dict(torch.load('./lightingNet.pkl'))
 
-
-train(featureNet, lightingNet, 701)
-
-
-# In[ ]:
-
-
-err = predict(featureNet, lightingNet, synVal1)
-print err.data[0]
+R = featureNet
+R = R.cuda()
+train(featureNet, lightingNet, 80)
 
 
 # In[ ]:
 
 
+#err = predict(featureNet, lightingNet, synVal1)
+#print err.data[0]
+
+
+# In[ ]:
+
+#featureNet = featureNet.cpu()
+#lightingNet = lightingNet.cpu()
 torch.save(featureNet.state_dict(), './featureNet.pkl')
 torch.save(lightingNet.state_dict(), './lightingNet.pkl')
 
@@ -733,9 +743,9 @@ print len(fs)
 # Traing GAN Net
 lossCriterion = nn.BCELoss()
 def trainGAN(lNet, rNet, D, fs, rData, rLabel, numDTrainer= 1, numGTrainer = 1, num_epoch = 5):
-    rNet_opt = torch.optim.Adadelta(rNet.parameters(), lr = 0.0002)
-    lNet_opt = torch.optim.Adadelta(lNet.parameters(), lr = 0.0002)
-    D_opt    = torch.optim.RMSprop(D.parameters(), lr = 0.0002)
+    rNet_opt = torch.optim.Adadelta(rNet.parameters(), lr = 0.0004)
+    lNet_opt = torch.optim.Adadelta(lNet.parameters(), lr = 0.0004)
+    D_opt    = torch.optim.RMSprop(D.parameters(), lr = 0.0004)
     firstCallD = False
     firstCallG = False
     for epoch in range(0, num_epoch):
@@ -753,8 +763,8 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, numDTrainer= 1, numGTrainer = 1, 
                 rFS = random.randint(0, len(fs)-1)
                 #print fs[rFS].shape
                 D_real = D(fs[rFS])
-                print D_real.size()
-                print image.size()
+                #print D_real.size()
+                #print image.size()
                 # Pass real data through generator
                 G_fake = rNet(image)
                 D_fake = D(G_fake)
@@ -763,7 +773,7 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, numDTrainer= 1, numGTrainer = 1, 
                 #D_fake_loss = lossCriterion(D_fake, var(-1 * torch.ones(batch_size, 1)))
                 D_real_loss = GANLoss(D_real)
                 D_fake_loss = GANLoss(D_fake)
-                print 'DLOSS:', D_real_loss.data[0], ' ', D_fake_loss.data[0]
+                #print 'DLOSS:', D_real_loss.data[0], ' ', D_fake_loss.data[0]
                 D_loss = -D_real_loss + D_fake_loss # -ve as we need to maximize
                 
                 # Backprop Discriminator
@@ -794,7 +804,7 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, numDTrainer= 1, numGTrainer = 1, 
                 else:
                     G_loss.backward(retain_graph = True)
                 rNet_opt.step()
-                #lNet_opt.step()
+                lNet_opt.step()
             GLoss_D += G_loss.data[0]
             DLoss_D += D_loss.data[0]
         print 'Epoch [{}/{}], Discriminator {}, Generator {}'.format(epoch+1, num_epoch, DLoss_D, GLoss_D)
@@ -816,12 +826,17 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, numDTrainer= 1, numGTrainer = 1, 
 
 
 
-trainGAN(lightingNet, R, D, fs, realImage, realSH, num_epoch = 4001)
+trainGAN(lightingNet, R, D, fs, realImage, realSH, numDTrainer = 5, num_epoch = 100)
 
+
+lightingNet = lightingNet.cpu()
+D = D.cpu()
+R = R.cpu()
 torch.save(lightingNet.state_dict(), './GAN_LNet.pkl')
 torch.save(D.state_dict(), './Discriminator.pkl')
 torch.save(R.state_dict(), './Generator.pkl')
 
 
-
+#out = predict(R, lightingNet, realImage)
+#print out
 
