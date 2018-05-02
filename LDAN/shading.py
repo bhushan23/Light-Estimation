@@ -3,6 +3,14 @@ import torchvision
 import numpy as np
 import torch.nn as nn
 from torch.autograd import Variable
+from utils import *
+
+def var(x):
+    if torch.cuda.is_available():
+        x = x.cuda()
+    return Variable(x)
+
+
 
 class waspShadeRenderer(nn.Module):
     def __init__(self, opt):
@@ -81,19 +89,23 @@ class MMatrix(nn.Module):
         return M
 
 # Shading from Normals and SH
-def ShadingFromDataLoading(rNormal, SH):
+def ShadingFromDataLoading(rNormal, SH, shadingFromNet = False):
     normal = next(iter(rNormal))
     normal = denorm(normal)
     normal = var(normal).type(torch.DoubleTensor)
-
-    rSH = next(iter(SH))
-    rSH = var(rSH).type(torch.DoubleTensor)
-    print normal.size(), rSH.size()
+    
+    if shadingFromNet:
+        rSH = SH.type(torch.DoubleTensor)
+    else:
+        rSH = next(iter(SH))
+        rSH = var(rSH).type(torch.DoubleTensor)
+    #print('NORMAL and SH', normal.size(), rSH.size())
     return getShadingFromNormalAndSH(normal, rSH)
 
 #
 def getShadingFromNormalAndSH(Normal, rSH):
     shader = waspShadeRenderer(None)
+    #print('SHader size:', Normal.size())
     out1 = shader(rSH, Normal)
     rSH = rSH[:,9:] #.unsqueeze(0)
     out2 = shader(rSH, Normal)
