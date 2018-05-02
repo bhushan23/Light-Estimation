@@ -50,15 +50,15 @@ def var(x):
 syn_image1, syn_image2, syn_label = dataLoading.load_synthetic_ldan_data(synthetic_image_dataset_path)
 real_image, sirf_normal, sirf_SH, sirf_shading = dataLoading.load_real_images_celebA(real_image_dataset_path)
 
+
 # Transforms being used
-SHOW_IMAGES = True
-if SHOW_IMAGES:
-    tmp = next(iter(syn_image1))
-    utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_image_path+'Syn.png')
-    tmp = next(iter(real_image))
-    utils.show(torchvision.utils.make_grid(tmp, padding=1))
-    tmp = next(iter(sirf_normal))
-    utils.show(torchvision.utils.make_grid(tmp, padding=1))
+#if SHOW_IMAGES:
+tmp = next(iter(syn_image1))
+utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_image_path+'test_synthetic_img.png')
+tmp = next(iter(real_image))
+utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_image_path+'test_real_image.png')
+tmp = next(iter(sirf_normal))
+utils.save_image(torchvision.utils.make_grid(utils.denorm(tmp), padding=1), output_image_path+'test_sirf_normal.png')
 
 
 # featureNet = ResNet(BasicBlock, [2, 2, 2, 2], 27)

@@ -2,7 +2,7 @@ from torch.utils.data import Dataset, DataLoader
 import os
 import h5py
 import numpy as np
-from utils import PRINT
+from utils import *
 from torchvision import transforms
 import torch
 
@@ -71,6 +71,8 @@ def load_synthetic_ldan_data(path, batch_size = 64):
     syn2 = np.moveaxis(syn2, 1, 2)
     syn2 = np.moveaxis(syn2, 2, 3)
 
+    if VERBOSE:
+        print('Size of Synthetic Data: ', syn1.shape)
     transform = transforms.Compose([
             #transforms.Resize(),
             transforms.ToTensor(),
@@ -86,7 +88,7 @@ def load_synthetic_ldan_data(path, batch_size = 64):
     synImage2 = torch.utils.data.DataLoader(syn2, batch_size = batch_size)
     synLabel = torch.utils.data.DataLoader(synLabel, batch_size = batch_size)
 
-    PRINT('Loading Synthetic Images Completed')
+    PRINT('Loading Synthetic Images Completed: ')
     # LDAN works on two frontal pose having same SH: Returning both image set
     return synImage1, synImage2, synLabel
 
@@ -96,18 +98,35 @@ def load_real_images_celebA(path, batch_size = 64):
         PRINT('NO H5 FILE FOUND FOR SYNTHETIC IMAGES', 'WARNING')
         return None
 
-    h5 = h5py.File(h5Files[0], 'r')
-    rImage = h5['/Image']
-    lighting = h5['/Lighting']
-    normal = h5['/Normal']
-    shading = h5['/Shading']
+    # Load data from H5 Files
+    firstTime = True
+    for file in h5Files:
+        hf = h5py.File(file, 'r')
+        print hf.keys()
+        rImg1 = hf['/Image']
+        lighting1 = hf['/Lighting']
+        normal1 = hf['/Normal']
+        shading1 = hf['/Shading']
 
-    # Following are not need for current experiment
-    # PLEASE UNCOMMENT IF YOU NEED
-    # height = h5['/Height']
-    # reflectance = h5['/Reflectance']
-    # finalLoss = h5['/FinalLoss']
+        # Following are not need for current experiment
+        # PLEASE UNCOMMENT IF YOU NEED
+        # height = hf['/Height']
+        # reflectance = hf['/Reflectance']
+        # finalLoss = hf['/FinalLoss']
+        if firstTime:
+            rImg = np.array(rImg1[:,:,:])
+            lighting = np.array(lighting1[:,:])
+            normal = np.array(normal1[:,:,:])
+            shading = np.array(shading1[:,:,:])
+            firstTime = False
+        else:
+            rImage = np.concatenate((rImg, np.array(rImg1[:,:,:])))
+            lighting = np.concatenate((lighting, np.array(lighting1[:,:])))
+            normal = np.concatenate((normal, np.array(normal1[:,:,:])))
+            shading = np.concatenate((shading, np.array(shading1[:,:,:])))
 
+    if VERBOSE:
+        print('Size of Real data: ', rImage.shape)
     # Transforms being used
     transform = transforms.Compose([
             #transforms.Resize(),
