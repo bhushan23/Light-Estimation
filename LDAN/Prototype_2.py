@@ -5,17 +5,11 @@ from torch.autograd import Variable
 from torchvision import datasets
 import torchvision
 import os
-import numpy as np
 import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import torchvision.utils as tutils
-import imageio
+#matplotlib.use('agg')
 import pickle
 import copy
-from PIL import Image
 import h5py
-from matplotlib.pyplot import imshow
 import pandas as pd
 import random
 import os
@@ -54,17 +48,17 @@ def var(x):
 
 # Load synthetic dataset
 syn_image1, syn_image2, syn_label = dataLoading.load_synthetic_ldan_data(synthetic_image_dataset_path)
-real_images, sirf_normal, sirf_SH, sirf_shading = dataLoading.load_real_images_celebA(real_image_dataset_path)
+real_image, sirf_normal, sirf_SH, sirf_shading = dataLoading.load_real_images_celebA(real_image_dataset_path)
 
 # Transforms being used
-
+SHOW_IMAGES = True
 if SHOW_IMAGES:
     tmp = next(iter(syn_image1))
-    sshow(torchvision.utils.make_grid(temp, padding=1))
+    utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_image_path+'Syn.png')
     tmp = next(iter(real_image))
-    show(torchvision.utils.make_grid(tmp, padding=1))
+    utils.show(torchvision.utils.make_grid(tmp, padding=1))
     tmp = next(iter(sirf_normal))
-    show(torchvision.utils.make_grid(tmp, padding=1))
+    utils.show(torchvision.utils.make_grid(tmp, padding=1))
 
 
 # featureNet = ResNet(BasicBlock, [2, 2, 2, 2], 27)
@@ -127,7 +121,7 @@ def predictAllSynthetic(fNet, data):
 
 # Training GAN
 fixed_input = next(iter(sirf_normal))
-show(torchvision.utils.make_grid(denorm(fixed_input), padding=1))
+utils.show(torchvision.utils.make_grid(utils.denorm(fixed_input), padding=1))
 def trainGAN(lNet, rNet, D, fs, rData, rLabel, numDTrainer= 1, numGTrainer = 1, num_epoch = 5):
     rNet_opt = torch.optim.Adadelta(rNet.parameters(), lr = 0.0002)
     lNet_opt = torch.optim.Adadelta(lNet.parameters(), lr = 0.0002)
