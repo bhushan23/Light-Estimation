@@ -1,4 +1,5 @@
 from torch.utils.data import Dataset, DataLoader
+from torchvision import datasets
 import os
 import h5py
 import numpy as np
@@ -92,7 +93,7 @@ def load_synthetic_ldan_data(path, batch_size = 64):
     # LDAN works on two frontal pose having same SH: Returning both image set
     return synImage1, synImage2, synLabel
 
-def load_real_images_celebA(path, batch_size = 64):
+def load_real_images_celebA(path, validation = False, batch_size = 64):
     h5Files = get_h5_file_names(path)
     if len(h5Files) == 0:
         PRINT('NO H5 FILE FOUND FOR SYNTHETIC IMAGES', 'WARNING')
@@ -133,6 +134,24 @@ def load_real_images_celebA(path, batch_size = 64):
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
     ])
+    if validation:
+        rImage_val, rImage = np.split(rImage, [batch_size])
+        lighting_val, lighting = np.split(lighting, [batch_size])
+        normal_val, normal = np.split(normal, [batch_size])
+        shading_val, shading = np.split(shading, [batch_size])
+        
+        rImage_val = CustomDataSetLoader(rImage_val, transform = transform)
+
+        real_image_val = torch.utils.data.DataLoader(rImage_val, batch_size= batch_size, shuffle = False)
+        sirfs_sh_val = torch.utils.data.DataLoader(lighting_val, batch_size= batch_size, shuffle = False)
+        sirfs_normal_val = torch.utils.data.DataLoader(normal_val, batch_size= batch_size, shuffle = False)
+        sirfs_shading_val = torch.utils.data.DataLoader(shading_val, batch_size= batch_size, shuffle = False)
+
+    else:
+        real_image_val = None
+        sirfs_sh_vak = None
+        sirfs_normal_val = None
+        sirfs_shading_val = None
     # Custom image dataset
     # Normal and Shading is already normalized by SIRFS method
     # So, Normalize only real images
@@ -149,4 +168,22 @@ def load_real_images_celebA(path, batch_size = 64):
     # rHeight = torch.utils.data.DataLoader(height, batch_size= batch_size, shuffle = False)
     # rReflectance = torch.utils.data.DataLoader(reflectance, batch_size= batch_size, shuffle = False)
     # rFinalLoss = torch.utils.data.DataLoader(finalLoss, batch_size= batch_size, shuffle = False)
-    return realImage, rNormal, realSH, rShading
+    return realImage, rNormal, realSH, rShading, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val
+
+def getMask(path, batch_size = 64):
+    
+    transform = transforms.Compose([transforms.ToTensor()])
+
+    dataset = datasets.ImageFolder(path, transform)
+
+    mask = torch.utils.data.DataLoader(dataset,batch_size=batch_size, shuffle=False)
+    
+    #real_image_mask_test = next(iter(mask))
+    #for real_image_mask_test in mask:
+    #    print('Image:')
+    #    img, _ = real_image_mask_test
+    #    save_image(torchvision.utils.make_grid(img, padding=1), './MASK_TEST.png')
+
+    print('Mask Complte')
+    return mask
+ 

@@ -10,7 +10,11 @@ def var(x):
         x = x.cuda()
     return Variable(x)
 
-
+def applyMask(input_img, mask):
+    input_img = input_img.data
+    mask = mask.type(torch.DoubleTensor)
+    output_img = torch.mul(input_img, mask)
+    return var(output_img)
 
 class waspShadeRenderer(nn.Module):
     def __init__(self, opt):
@@ -90,9 +94,12 @@ class MMatrix(nn.Module):
 
 # Shading from Normals and SH
 def ShadingFromDataLoading(rNormal, SH, shadingFromNet = False):
-    normal = next(iter(rNormal))
-    normal = denorm(normal)
-    normal = var(normal).type(torch.DoubleTensor)
+    if shadingFromNet:
+        normal = rNormal.type(torch.DoubleTensor)
+    else:        
+        normal = next(iter(rNormal))
+        normal = denorm(normal)
+        normal = var(normal).type(torch.DoubleTensor)
     
     if shadingFromNet:
         rSH = SH.type(torch.DoubleTensor)
