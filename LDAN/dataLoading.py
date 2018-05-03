@@ -4,6 +4,8 @@ import os
 import h5py
 import numpy as np
 from utils import *
+from torchvision import datasets
+from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import torch
 
@@ -171,27 +173,7 @@ def load_real_images_celebA(path, validation = False, batch_size = 64):
     return realImage, rNormal, realSH, rShading, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val
 
 
-def show(img):
-    npimg = img.numpy()
-    plt.imshow(np.transpose(npimg, (1,2,0)), interpolation='nearest')
-    
-
-class CustomDataSetLoader(Dataset):
-    def __init__(self, inData, transform = None):
-        self.data = inData
-        self.transform = transform
-        #normalize here or in __getitem__
-
-    def __getitem__(self, index):
-        data = self.data[index]
-        if self.transform is not None:
-            data = self.transform(data)
-        data = data.permute(1, 2, 0)
-        return data
-
-    def __len__(self):
-        return len(self.data)
-    
+   
 class DataSetNoPermute(Dataset):
     def __init__(self, inData, transform = None):
         self.data = inData
@@ -202,7 +184,7 @@ class DataSetNoPermute(Dataset):
         data = self.data[index]
         if self.transform is not None:
             data = self.transform(data)
-        data = data.permute(0, 2, 1)
+        data = data.permute(2, 0, 1)
         return data
 
     def __len__(self):
@@ -247,7 +229,7 @@ def load_SfSNet_data(path, validation = False, batch_size = 64):
             true_lighting = np.array(true_lighting1[:,:])
             firstTime = False
         else:
-            rImage = np.concatenate((rImg, np.array(rImg1[:,:,:])))
+            rImage = np.concatenate((rImage, np.array(rImg1[:,:,:])))
             lighting = np.concatenate((lighting, np.array(lighting1[:,:])))
             normal = np.concatenate((normal, np.array(normal1[:,:,:])))
             shading = np.concatenate((shading, np.array(shading1[:,:,:])))
