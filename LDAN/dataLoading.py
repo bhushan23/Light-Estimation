@@ -1,5 +1,5 @@
-from torch.utils.data import Dataset, DataLoader
-from torchvision import datasets
+
+
 import os
 import h5py
 import numpy as np
@@ -169,6 +169,157 @@ def load_real_images_celebA(path, validation = False, batch_size = 64):
     # rReflectance = torch.utils.data.DataLoader(reflectance, batch_size= batch_size, shuffle = False)
     # rFinalLoss = torch.utils.data.DataLoader(finalLoss, batch_size= batch_size, shuffle = False)
     return realImage, rNormal, realSH, rShading, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val
+
+
+def show(img):
+    npimg = img.numpy()
+    plt.imshow(np.transpose(npimg, (1,2,0)), interpolation='nearest')
+    
+
+class CustomDataSetLoader(Dataset):
+    def __init__(self, inData, transform = None):
+        self.data = inData
+        self.transform = transform
+        #normalize here or in __getitem__
+
+    def __getitem__(self, index):
+        data = self.data[index]
+        if self.transform is not None:
+            data = self.transform(data)
+        data = data.permute(1, 2, 0)
+        return data
+
+    def __len__(self):
+        return len(self.data)
+    
+class DataSetNoPermute(Dataset):
+    def __init__(self, inData, transform = None):
+        self.data = inData
+        self.transform = transform
+        #normalize here or in __getitem__
+
+    def __getitem__(self, index):
+        data = self.data[index]
+        if self.transform is not None:
+            data = self.transform(data)
+        data = data.permute(0, 2, 1)
+        return data
+
+    def __len__(self):
+        return len(self.data)
+
+def get_h5_file_names(path):
+    h5Files = []
+    for file in os.listdir(path):
+        h5Files.append(path+file)
+    return h5Files
+
+def load_SfSNet_data(path, validation = False, batch_size = 64):
+    h5Files = get_h5_file_names(path)
+    if len(h5Files) == 0:
+        print('NO H5 FILE FOUND FOR SYNTHETIC IMAGES', 'WARNING')
+        return None
+
+    # Load data from H5 Files
+    firstTime = True
+    for file in h5Files:
+        hf = h5py.File(file, 'r')
+        print hf.keys()
+        rImg1 = hf['/Image']
+        lighting1 = hf['/Lighting']
+        normal1 = hf['/Normal']
+        shading1 = hf['/Shading']
+        true_normal1 = hf['/TrueNormal']
+        mask1 = hf['/mask']
+        true_lighting1 = hf['/trueLighting']
+        # Following are not need for current experiment
+        # PLEASE UNCOMMENT IF YOU NEED
+        # height = hf['/Height']
+        # reflectance = hf['/Reflectance']
+        # finalLoss = hf['/FinalLoss']
+        if firstTime:
+            rImage = np.array(rImg1[:,:,:])
+            lighting = np.array(lighting1[:,:])
+            normal = np.array(normal1[:,:,:])
+            shading = np.array(shading1[:,:,:])
+            true_normal = np.array(true_normal1[:,:,:])
+            mask = np.array(mask1[:,:,:])
+            true_lighting = np.array(true_lighting1[:,:])
+            firstTime = False
+        else:
+            rImage = np.concatenate((rImg, np.array(rImg1[:,:,:])))
+            lighting = np.concatenate((lighting, np.array(lighting1[:,:])))
+            normal = np.concatenate((normal, np.array(normal1[:,:,:])))
+            shading = np.concatenate((shading, np.array(shading1[:,:,:])))
+            true_normal = np.concatenate((true_normal, np.array(true_normal1[:,:,:])))
+            mask = np.concatenate((mask, np.array(mask1[:,:,:])))
+            true_lighting = np.concatenate((true_lighting, np.array(true_lighting1[:,:])))
+
+    print('Size of Real data: ', rImage.shape, mask.shape, true_normal.shape)
+    # Transforms being used
+    transform = transforms.Compose([
+            #transforms.Resize(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+    ])
+    
+    noNormalize = transforms.Compose([
+            #transforms.Resize(),
+            transforms.ToTensor(),
+    ])
+        
+    if validation:
+        rImage_val, rImage = np.split(rImage, [batch_size])
+        lighting_val, lighting = np.split(lighting, [batch_size])
+        normal_val, normal = np.split(normal, [batch_size])
+        shading_val, shading = np.split(shading, [batch_size])
+        true_normal_val, true_normal = np.split(true_normal, [batch_size])
+        mask_val, mask = np.split(mask, [batch_size])
+        true_lighting_val, true_lighting = np.split(true_lighting, [batch_size])
+        
+        rImage_val = CustomDataSetLoader(rImage_val, transform = transform)
+
+        real_image_val = torch.utils.data.DataLoader(rImage_val, batch_size= batch_size, shuffle = False)
+        sirfs_sh_val = torch.utils.data.DataLoader(lighting_val, batch_size= batch_size, shuffle = False)
+        sirfs_normal_val = torch.utils.data.DataLoader(normal_val, batch_size= batch_size, shuffle = False)
+        sirfs_shading_val = torch.utils.data.DataLoader(shading_val, batch_size= batch_size, shuffle = False)
+        true_normal_val = torch.utils.data.DataLoader(true_normal_val, batch_size= batch_size, shuffle = False)
+        mask_val = torch.utils.data.DataLoader(mask_val, batch_size= batch_size, shuffle = False)
+        true_lighting_val = torch.utils.data.DataLoader(true_lighting_val, batch_size= batch_size, shuffle = False)
+
+    else:
+        real_image_val = None
+        sirfs_sh_val = None
+        sirfs_normal_val = None
+        sirfs_shading_val = None
+        true_normal_val = None
+        mask_val = None
+        true_lighting_val = None
+                                     
+    # Custom image dataset
+    # Normal and Shading is already normalized by SIRFS method
+    # So, Normalize only real images
+    rImage = CustomDataSetLoader(rImage, transform = transform)
+    mask = DataSetNoPermute(mask, transform = noNormalize)
+    true_normal = CustomDataSetLoader(true_normal, transform = noNormalize)
+
+    realImage = torch.utils.data.DataLoader(rImage, batch_size= batch_size, shuffle = False)
+    realSH = torch.utils.data.DataLoader(lighting, batch_size= batch_size, shuffle = False)
+    rNormal = torch.utils.data.DataLoader(normal, batch_size= batch_size, shuffle = False)
+    rShading = torch.utils.data.DataLoader(shading, batch_size= batch_size, shuffle = False)
+    tNormal = torch.utils.data.DataLoader(true_normal, batch_size= batch_size, shuffle = False)
+    mask = torch.utils.data.DataLoader(mask, batch_size= batch_size, shuffle = False)
+    tSH = torch.utils.data.DataLoader(true_lighting, batch_size= batch_size, shuffle = False)
+    
+    print('Loading SFSNet Synthetic Images Completed')
+    # Following are not need for current experiment
+    # PLEASE UNCOMMENT IF YOU NEED
+    # rHeight = torch.utils.data.DataLoader(height, batch_size= batch_size, shuffle = False)
+    # rReflectance = torch.utils.data.DataLoader(reflectance, batch_size= batch_size, shuffle = False)
+    # rFinalLoss = torch.utils.data.DataLoader(finalLoss, batch_size= batch_size, shuffle = False)
+    return realImage, rNormal, realSH, rShading, tNormal, mask, tSH, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val, true_normal_val, mask_val, true_lighting_val 
+
+
 
 def getMask(path, batch_size = 64):
     
