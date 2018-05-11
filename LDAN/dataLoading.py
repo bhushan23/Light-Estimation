@@ -8,6 +8,7 @@ from torchvision import datasets
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import torch
+import numpy as np
 
 # Normalize data while loading
 class CustomDataSetLoader(Dataset):
@@ -216,6 +217,7 @@ def load_SfSNet_data(path, validation = False, twoLevel = False, batch_size = 64
     firstTime = True
     for file in h5Files:
         hf = h5py.File(file, 'r')
+        print file
         print hf.keys()
         rImg1 = hf['/Image']
         lighting1 = hf['/Lighting']
@@ -250,6 +252,18 @@ def load_SfSNet_data(path, validation = False, twoLevel = False, batch_size = 64
             mask = np.concatenate((mask, np.array(mask1[:,:,:])))
             sirfs_lighting = np.concatenate((sirfs_lighting, np.array(sirfs_lighting1[:,:])))
             sirfs_shading = np.concatenate((sirfs_shading, np.array(sirfs_shading1[:,:])))
+    
+    # SHUFFLE THE DATA
+
+    permutation = np.random.permutation(rImage.shape[0])
+    rImage = rImage[permutation]
+    lighting = lighting[permutation]
+    normal = normal[permutation]
+    shading = shading[permutation]
+    sirfs_normal = sirfs_normal[permutation]
+    mask = mask[permutation]
+    sirfs_lighting = sirfs_lighting[permutation]
+    sirfs_shading = sirfs_shading[permutation]
 
 
     print('Size of Real data: ', rImage.shape, mask.shape, sirfs_normal.shape)
@@ -277,6 +291,8 @@ def load_SfSNet_data(path, validation = False, twoLevel = False, batch_size = 64
         sirfs_shading_val, sirfs_shading = np.split(sirfs_shading, [batch_size])
 
         rImage_val = CustomDataSetLoader(rImage_val, transform = transform)
+        normal_val = CustomDataSetLoader(normal_val, transform = transform)
+
         #mask_val = CustomDataSetLoader(mask_val, transform = noNormalize)
         #shading_val = CustomDataSetLoader(shading_val, transform = transform)
 
@@ -307,7 +323,7 @@ def load_SfSNet_data(path, validation = False, twoLevel = False, batch_size = 64
     rImage = CustomDataSetLoader(rImage, transform = transform)
     #mask = CustomDataSetLoader(mask, transform = noNormalize)
     #shading = CustomDataSetLoader(shading, transform = transform)
-    #normal = CustomDataSetLoader(normal, transform = noNormalize)
+    normal = CustomDataSetLoader(normal, transform = transform)
 
     realImage = torch.utils.data.DataLoader(rImage, batch_size= batch_size, shuffle = False)
     realSH = torch.utils.data.DataLoader(lighting, batch_size= batch_size, shuffle = False)

@@ -1,4 +1,4 @@
 import imageio
 from utils import *
 
-generate_animation('./BasicNet/images', 300,  'BasicNet')
+generate_animation('./SfSNet/images', 300,  'SfSNet')
