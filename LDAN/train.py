@@ -106,7 +106,7 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, fixed_input, sirfs_fixed_normal, 
                 D_real_loss = GAN_loss(D_real)
                 D_fake_loss = GAN_loss(D_fake)
                 #print 'DLOSS:', D_real_loss.data[0], ' ', D_fake_loss.data[0]
-                D_loss = D_real_loss + D_fake_loss # -ve as we need to maximize
+                D_loss = D_real_loss - D_fake_loss # -ve as we need to maximize
 
                 # Backprop Discriminator
                 D.zero_grad()

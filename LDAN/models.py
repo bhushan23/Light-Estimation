@@ -161,7 +161,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.fc = nn.Linear(128, 128)
         self.fc1 = nn.Linear(128, 1)
-        self.dOut = nn.Dropout(p=0.2)
+        self.dOut = nn.Dropout(p=0.5)
 
     def forward(self, x):
         x = self.fc(x)

@@ -24,22 +24,30 @@ from utils import PRINT
 from train import *
 
 SHOW_IMAGES = False
-load_syn = True
-load_GAN = True
-train_syn = False
-train_GAN = False
+load_syn = False #True
+load_GAN = False #True
+train_syn = True #False
+train_GAN = True #False
 FirstRun = False
-gan_epochs = 400
+gan_epochs = 200
 syn_epochs = 200
-exp_name = 'basicNet_SfSNet'
+exp_name = 'basicNet_SfSNet_LossFunctionReset'
 LOCAL_MACHINE = False
-output_path = './basicNet_SfSNet/'
+output_path = './basicNet_SfSNet_LossFunctionReset/'
 synthetic_image_dataset_path = './data/synHao/'
 sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImages/' #Test/'   #scripts/SfsNet_SynImage_back/'
 if LOCAL_MACHINE:
     real_image_dataset_path = '../../Light-Estimation/datasets/realImagesSH/'
 else:
     real_image_dataset_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/realData/data/'
+
+
+if FirstRun == True:
+    os.mkdir(output_path)
+    os.mkdir(output_path+'images/')
+    os.mkdir(output_path+'val/')
+    os.mkdir(output_path+'models/')
+
 
 real_image_mask = '/home/bsonawane/Thesis/LightEstimation/SIRFS/realData/mask/'
 global_batch_size = 64
