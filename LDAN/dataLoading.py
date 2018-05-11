@@ -257,6 +257,7 @@ def load_SfSNet_data(path, validation = False, twoLevel = False, batch_size = 64
     transform = transforms.Compose([
             #transforms.Resize(),
             transforms.ToTensor(),
+            type(torch.FloatTensor()),
             transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
     ])
     
@@ -276,8 +277,8 @@ def load_SfSNet_data(path, validation = False, twoLevel = False, batch_size = 64
         sirfs_shading_val, sirfs_shading = np.split(sirfs_shading, [batch_size])
 
         rImage_val = CustomDataSetLoader(rImage_val, transform = transform)
-        mask_val = CustomDataSetLoader(mask_val, transform = noNormalize)
-        shading_val = CustomDataSetLoader(shading_val, transform = transform)
+        #mask_val = CustomDataSetLoader(mask_val, transform = noNormalize)
+        #shading_val = CustomDataSetLoader(shading_val, transform = transform)
 
 
         real_image_val = torch.utils.data.DataLoader(rImage_val, batch_size= batch_size, shuffle = False)
@@ -304,8 +305,8 @@ def load_SfSNet_data(path, validation = False, twoLevel = False, batch_size = 64
     # Normal and Shading is already normalized by SIRFS method
     # So, Normalize only real images
     rImage = CustomDataSetLoader(rImage, transform = transform)
-    mask = CustomDataSetLoader(mask, transform = noNormalize)
-    shading = CustomDataSetLoader(shading, transform = transform)
+    #mask = CustomDataSetLoader(mask, transform = noNormalize)
+    #shading = CustomDataSetLoader(shading, transform = transform)
     #normal = CustomDataSetLoader(normal, transform = noNormalize)
 
     realImage = torch.utils.data.DataLoader(rImage, batch_size= batch_size, shuffle = False)
@@ -315,7 +316,8 @@ def load_SfSNet_data(path, validation = False, twoLevel = False, batch_size = 64
     sirfs_Normal = torch.utils.data.DataLoader(sirfs_normal, batch_size= batch_size, shuffle = False)
     mask = torch.utils.data.DataLoader(mask, batch_size= batch_size, shuffle = False)
     sirfs_SH = torch.utils.data.DataLoader(sirfs_lighting, batch_size= batch_size, shuffle = False)
-    
+    sirfs_shading = torch.utils.data.DataLoader(sirfs_shading, batch_size= batch_size, shuffle = False)
+ 
     print('Loading SFSNet Synthetic Images Completed')
     # Following are not need for current experiment
     # PLEASE UNCOMMENT IF YOU NEED

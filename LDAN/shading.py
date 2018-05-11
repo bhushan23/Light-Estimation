@@ -12,8 +12,9 @@ def var(x):
 
 def applyMask(input_img, mask):
     input_img = input_img.data
-    mask = mask.type(torch.DoubleTensor)
-    output_img = torch.mul(input_img, mask)
+    mask = mask.type(torch.FloatTensor)
+    #output_img = input_img.type(torch.FloatTensor) * mask
+    output_img = torch.mul(input_img.type(torch.FloatTensor), mask)
     return var(output_img)
 
 class waspShadeRenderer(nn.Module):

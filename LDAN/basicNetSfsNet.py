@@ -6,7 +6,7 @@ from torchvision import datasets
 import torchvision
 import os
 import matplotlib
-matplotlib.use('agg')
+matplotlib.use('agg')i
 import pickle
 import copy
 import h5py
@@ -24,15 +24,15 @@ from utils import PRINT
 from train import *
 
 SHOW_IMAGES = False
-load_syn = True
+load_syn = False #True
 load_GAN = False #True
-train_syn = False
-train_GAN = False
+train_syn = True #False
+train_GAN = True #False
 FirstRun = False
 LOCAL_MACHINE = False
 output_path = './SfSNet/'
-synthetic_image_dataset_path = './data/synHao_T/'
-sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImages/test/'   #scripts/SfsNet_SynImage_back/'
+synthetic_image_dataset_path = './data/synHao/'
+sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImages/'   #scripts/SfsNet_SynImage_back/'
 if LOCAL_MACHINE:
     real_image_dataset_path = '../../Light-Estimation/datasets/realImagesSH/'
 else:
@@ -50,8 +50,7 @@ if torch.cuda.is_available():
     IS_CUDA = True
 
 def save_shading(normal, sh, path, name, shadingFromNet = False):
-    outShadingB = ShadingFromDataLoading(normal, sh, shadingFromNet = shadingFromNet)
-    outShadingB = denorm(outShadingB)
+
     #if real_image_mask != None:
     #outShadingB = applyMask(outShadingB, real_image_mask)
     outShadingB = outShadingB.data
@@ -83,34 +82,35 @@ real_image_mask_test = next(iter(mask_val))
 utils.save_image(torchvision.utils.make_grid(real_image_mask_test*255, padding=1), output_path+'images/MASK_TEST.png')
 
 tmp = next(iter(syn_image1))
-utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_path+'images/test_synthetic_img.png')
+utils.save_image(toirchvision.utils.make_grid(tmp, padding=1), output_path+'images/test_synthetic_img.png')
 
-tmp = next(iter(real_image_val))
-#tmp = denorm(tmp)
-tmp = applyMask(var(tmp), real_image_mask_test)
+tmp = var(next(iter(real_image_val)))
+tmp = denorm(tmp)
+print(tmp.data.shape)
+tmp = applyMask(tmp, real_image_mask_test)
 utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_real_image.png')
 
-tmp = next(iter(real_normal_val))
-#tmp = denorm(tmp)
-tmp = applyMask(var(tmp), real_image_mask_test)
+tmp = var(next(iter(ireal_normal_val)))
+tmp = denorm(tmp)
+tmp = applyMask(tmp, real_image_mask_test)
 utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_real_normal.png')
 
 
-tmp = next(iter(sirfs_normal_val))
-#tmp = denorm(tmp)
-tmp = applyMask(var(tmp), real_image_mask_test)
+tmp = var(next(iter(sirfs_normal_val)))
+tmp = denorm(tmp)
+tmp = applyMask(tmp, real_image_mask_test)
 utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_sirf_normal.png')
 
-tmp = next(iter(sirfs_shading_val))
+tmp = var(next(iter(sirfs_shading_val)))
 tmp = denorm(tmp)
-tmp = applyMask(var(tmp), real_image_mask_test)
+tmp = applyMask(tmp, real_image_mask_test)
 utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_sirf_shading.png')
 
 
-tmp = next(iter(real_shading_val))
+tmp = var(next(iter(real_shading_val)))
 tmp = denorm(tmp)
-tmp = applyMask(var(tmp), real_image_mask_test)
-utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_real_shading.png')
+tmp = applyMask(tmp, real_image_mask_test)
+utils.save_image(torchvision.utils.make_grid(tmp.data*255, padding=1), output_path+'images/test_real_shading.png')
 
 
 ## TRUE SHADING
@@ -170,11 +170,9 @@ if train_GAN:
         real_image_val = real_image
         sirfs_normal_val = sirfs_SH
 
-    trainGAN(lightingNet, R, D, fs, real_image, sirfs_SH, fixed_input, sirfs_fixed_normal, real_image_mask_test, output_path = output_path, num_epoch = 400)
+    trainGAN(lightingNet, R, D, fs, real_image, sirfs_sh, fixed_input, sirfs_fixed_normal, real_image_mask_test, output_path = output_path, num_epoch = 400)
     torch.save(lightingNet.state_dict(), output_path+'models/GAN_LNet.pkl')
     torch.save(R.state_dict(),output_path+ 'models/Generator.pkl')
-
-
 
 
 ## TESTING 
