@@ -25,18 +25,18 @@ from train import *
 
 SHOW_IMAGES = False
 load_syn = True
-load_GAN = True
+load_GAN = False #True
 train_syn = False
 train_GAN = False
 FirstRun = False
 LOCAL_MACHINE = False
 output_path = './SfSNet/'
-synthetic_image_dataset_path = './data/synHao/'
-sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/scripts/SfsNet_SynImage_back/'
+synthetic_image_dataset_path = './data/synHao_T/'
+sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImages/test/'   #scripts/SfsNet_SynImage_back/'
 if LOCAL_MACHINE:
     real_image_dataset_path = '../../Light-Estimation/datasets/realImagesSH/'
 else:
-    real_image_dataset_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/realData/data_T/'
+    real_image_dataset_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/realData/data/'
 
 real_image_mask = '/home/bsonawane/Thesis/LightEstimation/SIRFS/realData/mask/'
 global_batch_size = 64
@@ -70,23 +70,48 @@ def var(x):
 syn_image1, syn_image2, syn_label = dataLoading.load_synthetic_ldan_data(synthetic_image_dataset_path)
 #real_image, sirfs_normal, sirfs_SH, sirfs_shading, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val = dataLoading.load_real_images_celebA(real_image_dataset_path, validation = True)
 #real_image_mask = dataLoading.getMask(real_image_mask, global_batch_size)
-real_image, sirfs_normal, sirfs_SH, sirfs_shading, tNormal, real_image_mask, tSH, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val, true_normal_val, mask_val, true_lighting_val = dataLoading.load_SfSNet_data(sfs_net_path, validation = True)
+#real_image, sirfs_normal, sirfs_SH, sirfs_shading, tNormal, real_image_mask, tSH, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val, true_normal_val, mask_val, true_lighting_val = dataLoading.load_SfSNet_data(sfs_net_path, validation = True, twoLevel = True)
+
+
+real_image, real_normal, real_sh, real_shading, mask, sirfs_shading, sirfs_normal, sirfs_sh, real_image_val, real_normal_val, real_lighting_val, real_shading_val, mask_val, sirfs_shading_val, sirfs_normal_val, sirfs_sh_val  = dataLoading.load_SfSNet_data(sfs_net_path, validation = True, twoLevel = True)
+
 
 # Transforms being used
 #if SHOW_IMAGES:
 
+real_image_mask_test = next(iter(mask_val))
+utils.save_image(torchvision.utils.make_grid(real_image_mask_test*255, padding=1), output_path+'images/MASK_TEST.png')
+
 tmp = next(iter(syn_image1))
 utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_path+'images/test_synthetic_img.png')
-tmp = next(iter(real_image))
-utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_path+'images/test_real_image.png')
-tmp = next(iter(sirfs_normal))
-utils.save_image(torchvision.utils.make_grid(utils.denorm(tmp), padding=1), output_path+'images/test_sirf_normal.png')
 
-tmp = next(iter(sirfs_shading))
-utils.save_image(torchvision.utils.make_grid(utils.denorm(tmp), padding=1), output_path+'images/test_sirf_shading.png')
+tmp = next(iter(real_image_val))
+#tmp = denorm(tmp)
+tmp = applyMask(var(tmp), real_image_mask_test)
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_real_image.png')
 
-real_image_mask_test = next(iter(real_image_mask))
-utils.save_image(torchvision.utils.make_grid(real_image_mask_test, padding=1), output_path+'images/MASK_TEST.png')
+tmp = next(iter(real_normal_val))
+#tmp = denorm(tmp)
+tmp = applyMask(var(tmp), real_image_mask_test)
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_real_normal.png')
+
+
+tmp = next(iter(sirfs_normal_val))
+#tmp = denorm(tmp)
+tmp = applyMask(var(tmp), real_image_mask_test)
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_sirf_normal.png')
+
+tmp = next(iter(sirfs_shading_val))
+tmp = denorm(tmp)
+tmp = applyMask(var(tmp), real_image_mask_test)
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_sirf_shading.png')
+
+
+tmp = next(iter(real_shading_val))
+tmp = denorm(tmp)
+tmp = applyMask(var(tmp), real_image_mask_test)
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_real_shading.png')
+
 
 ## TRUE SHADING
 
@@ -128,10 +153,8 @@ if train_syn:
 
 fixed_input = var(next(iter(real_image_val))).type(dtype)
 sirfs_fixed_normal = var(next(iter(sirfs_normal_val)))
-true_fixed_normal = var(next(iter(true_normal_val)))
-true_fixed_lighting = var(next(iter(true_lighting_val)))
-
-
+true_fixed_normal = var(next(iter(real_normal_val)))
+true_fixed_lighting = var(next(iter(real_lighting_val)))
 
 #real_image_mask = next(iter(real_image_mask))
 #utils.show(torchvision.utils.make_grid(utils.denorm(fixed_input), padding=1))
@@ -147,7 +170,7 @@ if train_GAN:
         real_image_val = real_image
         sirfs_normal_val = sirfs_SH
 
-    trainGAN(lightingNet, R, D, fs, real_image, sirfs_SH, fixed_input, sirfs_fixed_normal, real_image_mask_test, output_path = output_path, num_epoch = 300)
+    trainGAN(lightingNet, R, D, fs, real_image, sirfs_SH, fixed_input, sirfs_fixed_normal, real_image_mask_test, output_path = output_path, num_epoch = 400)
     torch.save(lightingNet.state_dict(), output_path+'models/GAN_LNet.pkl')
     torch.save(R.state_dict(),output_path+ 'models/Generator.pkl')
 
@@ -159,21 +182,36 @@ fixedSH = lightingNet(R(fixed_input))
 # print('OUTPUT OF fixedSH:', fixedSH.data.size(), sirfs_fixed_normal.size())
 
 ## With SIRFS_NORMAL
-save_shading(sirfs_fixed_normal, fixedSH, path = output_path+'images/', name = 'PREDICTED_SIRFS_NORMAL', shadingFromNet = True)
+save_shading(sirfs_fixed_normal, fixedSH, path = output_path+'val/', name = 'PREDICTED_SIRFS_NORMAL', shadingFromNet = True)
 
 ## With True Normal
-save_shading(true_fixed_normal, fixedSH, path = output_path+'images/', name = 'PREDICTED_TRUE_NORMAL', shadingFromNet = True)
+save_shading(true_fixed_normal, fixedSH, path = output_path+'val/', name = 'PREDICTED_TRUE_NORMAL', shadingFromNet = True)
 
 ## EXPECTED with SIRFS NORMAL
-save_shading(sirfs_fixed_normal, true_fixed_lighting, path = output_path+'images/', name = 'EXPECTED_SIRFS_NORMAL', shadingFromNet = True)
+save_shading(sirfs_fixed_normal, true_fixed_lighting, path = output_path+'val/', name = 'EXPECTED_SIRFS_NORMAL', shadingFromNet = True)
 
 ## EXPECTED with true normal
-save_shading(true_fixed_normal, true_fixed_lighting, path = output_path+'images/', name = 'EXPECTED_TRUE_NORMAL', shadingFromNet = True)
+save_shading(true_fixed_normal, true_fixed_lighting, path = output_path+'val/', name = 'EXPECTED_TRUE_NORMAL', shadingFromNet = True)
 
 
 ## Save single image
-tmp = next(iter(sirfs_shading))
-utils.save_image(tmp[0], output_path+'images/shading.png')
+#tmp = next(iter(sirfs_shading))
+#utils.save_image(tmp[0], output_path+'val/shading.png')
+
+fSH = fixedSH.cpu().data.numpy()
+tfSH = true_fixed_lighting.cpu().data.numpy()
+
+pSH = open(output_path+'predicted_sh.csv', 'a')
+eSH = open(output_path+'expected_sh.csv', 'a')
+
+for i in fSH:
+    i.tofile(pSH, sep=',')
+    pSH.write('\n')
+
+for i in tfSH:
+    i.tofile(eSH, sep=',')
+    eSH.write('\n')
+
 
 
 
@@ -186,12 +224,11 @@ if SHOW_IMAGES:
     show(dreal[0])
     dNormal = next(iter(rNormal))
     show(denorm(dNormal[0]))
-
+'''
 
 lightingNet = lightingNet.cpu()
 D = D.cpu()
 R = R.cpu()
-torch.save(lightingNet.state_dict(), './GAN_LNet.pkl')
-torch.save(D.state_dict(), './Discriminator.pkl')
-torch.save(R.state_dict(), './Generator.pkl')
-'''
+torch.save(lightingNet.state_dict(), './CPU_GAN_LNet.pkl')
+torch.save(D.state_dict(), './CPU_Discriminator.pkl')
+torch.save(R.state_dict(), './CPU_Generator.pkl')

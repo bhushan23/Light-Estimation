@@ -146,12 +146,13 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, fixed_input, sirfs_fixed_normal, 
         # print('OUTPUT OF fixedSH:', fixedSH.data.size(), sirfs_fixed_normal.size())
         outShadingB = ShadingFromDataLoading(sirfs_fixed_normal, fixedSH, shadingFromNet = True)
         outShadingB = denorm(outShadingB)
+        # if real_image_mask != None:
         outShadingB = applyMask(outShadingB, real_image_mask)
         outShadingB = outShadingB.data
         #pic = torchvision.utils.make_grid(outShadingB, padding=1)
         save_image(outShadingB, output_path+'images/image_{}.png'.format(epoch))
 
-        if epoch % 100 == 0:
+        if epoch+1 % 100 == 0:
             torch.save(lNet.state_dict(), output_path+'savedModels/GAN_LNet_'+str(epoch/100)+'.pkl')
             torch.save(D.state_dict(), output_path+'savedModels/Discriminator._'+str(epoch/100)+'pkl')
             torch.save(rNet.state_dict(), output_path+'savedModels/Generator_'+str(epoch/100)+'.pkl')
