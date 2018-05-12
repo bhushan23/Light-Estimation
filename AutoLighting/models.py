@@ -2,6 +2,13 @@ import torch.nn as nn
 import math
 import torch.utils.model_zoo as model_zoo
 import torch.nn.functional as F
+import torch
+from torch.autograd import Variable
+
+def var(x):
+    if torch.cuda.is_available():
+        x = x.cuda()
+    return Variable(x)
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
@@ -182,10 +189,10 @@ class VAutoEncoder(nn.Module):
             nn.Linear(155, 128),
             #nn.BatchNorm1d(128),
             nn.LeakyReLU(0.2),
-            nn.Linear(128, 64),
+            nn.Linear(128, 64))
             #nn.BatchNorm1d(64),
-            nn.LeakyReLU(0.2),
-            nn.Linear(64, 32))
+            #nn.LeakyReLU(0.2),
+            #nn.Linear(64, 32))
 
        self.decoder = nn.Sequential(
             nn.Linear(32, 64),
@@ -197,7 +204,7 @@ class VAutoEncoder(nn.Module):
 
     def reparameterize(self, mu, log_var):
         """"z = mean + eps * sigma where eps is sampled from N(0, 1)."""
-        eps = to_var(torch.randn(mu.size(0), mu.size(1)))
+        eps = var(torch.randn(mu.size(0), mu.size(1)))
         z = mu + eps * torch.exp(log_var/2)    # 2 for convert var to std
         return z
 

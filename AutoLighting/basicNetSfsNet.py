@@ -30,16 +30,17 @@ load_AE     = False
 train_syn   = True #False
 train_real  = True #False
 train_AE    = True #False
-FirstRun    = False
-gan_epochs  = 10
-syn_epochs  = 10
+FirstRun    = False #True
+real_epochs = 1
+syn_epochs  = 1
+vae_epochs  = 1
 
 LOCAL_MACHINE = False
 exp_name      = 'basicNet_AE'
 output_path   = './basicNet_AE/'
 
-synthetic_data_path = '/home/bhushan/college/CV/Thesis/Projects/lightestimation/Light-Estimation/data/AE/syn/'
-real_data_path      = '/home/bhushan/college/CV/Thesis/Projects/lightestimation/Light-Estimation/data/AE/real/'
+synthetic_data_path = '/home/bsonawane/Thesis/LightEstimation/Light-Estimation/data/AE/syn/'  #'/home/bhushan/college/CV/Thesis/Projects/lightestimation/Light-Estimation/data/AE/syn/'
+real_data_path      = '/home/bsonawane/Thesis/LightEstimation/Light-Estimation/data/AE/real/'   #'/home/bhushan/college/CV/Thesis/Projects/lightestimation/Light-Estimation/data/AE/real/'
 
 if FirstRun == True:
     os.mkdir(output_path)
@@ -48,7 +49,7 @@ if FirstRun == True:
     os.mkdir(output_path+'models/')
     os.mkdir(output_path+'savedModels/')
 
-global_batch_size = 64
+batch_size = 64
 
 # Helper routines
 IS_CUDA = False
@@ -81,12 +82,9 @@ def var(x):
 #real_image_mask = dataLoading.getMask(real_image_mask, global_batch_size)
 #real_image, sirfs_normal, sirfs_SH, sirfs_shading, tNormal, real_image_mask, tSH, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val, true_normal_val, mask_val, true_lighting_val = dataLoading.load_SfSNet_data(sfs_net_path, validation = True, twoLevel = True)
 
-
 syn_image, syn_normal, syn_sh, syn_shading, syn_mask, syn_sirfs_shading, syn_sirfs_normal, syn_sirfs_sh, syn_image_val, syn_normal_val, syn_lighting_val, syn_shading_val, syn_mask_val, syn_sirfs_shading_val, syn_sirfs_normal_val, syn_sirfs_sh_val  = dataLoading.load_SfSNet_data(synthetic_data_path)
 
-
 real_image, real_normal, real_sh, real_shading, real_mask, real_sirfs_shading, real_sirfs_normal, real_sirfs_sh, real_image_val, real_normal_val, real_lighting_val, real_shading_val, real_mask_val, real_sirfs_shading_val, real_sirfs_normal_val, real_sirfs_sh_val  = dataLoading.load_SfSNet_data(real_data_path, validation = True)
-
 
 # Transforms being used
 # if SHOW_IMAGES:
@@ -145,14 +143,14 @@ vae = models.VAutoEncoder()
 
 print(featureNet)
 print(lightingNet)
-#featureNet = featureNet.cuda()
-#lightingNet = lightingNet.cuda()
-#featureNet_real = featureNet_real.cuda()
-#lightingNet_real = lightingNet_real.cuda()
-#vae = vae.cuda()
+featureNet = featureNet.cuda()
+lightingNet = lightingNet.cuda()
+featureNet_real = featureNet_real.cuda()
+lightingNet_real = lightingNet_real.cuda()
+vae = vae.cuda()
 
 dtype = torch.FloatTensor
-#dtype = torch.cuda.FloatTensor ## UNCOMMENT THIS LINE IF YOU'RE ON A GPU!
+dtype = torch.cuda.FloatTensor ## UNCOMMENT THIS LINE IF YOU'RE ON A GPU!
 
 # Training with Synthetic Images
 if load_syn:
@@ -178,11 +176,11 @@ if load_AE:
     vae.load_state_dict(torch.load(output_path+'models/vae.pkl'))
 
 if train_AE:
-    trainVAE(vae, featureNet, syn_image, sirfs_sh, syn_sh, num_epochs = vae_epochs)
+    trainVAE(vae, featureNet, syn_image, syn_sirfs_sh, syn_sh, num_epochs = vae_epochs)
     torch.save(vae.state_dict(), output_path+'models/vae.pkl')
 
 
-denoised_sh = denoised_SH(vae, real_image, noisy_sh)
+denoised_sh = denoised_SH(vae, featureNet, real_image, real_sirfs_sh, batch_size)
 
 denoised_sh = torch.utils.data.DataLoader(denoised_sh, batch_size= batch_size, shuffle = False)
 # NOW, We have denoised SH for real images
@@ -201,8 +199,8 @@ if train_real:
 
 
 ## TESTING
-fixedSH = lightingNet(R(fixed_input))
-fixedSH = fixedSH.type(torch.DoubleTensor)
+#fixedSH = lightingNet(R(fixed_input))
+#fixedSH = fixedSH.type(torch.DoubleTensor)
 
 ## With SIRFS_NORMAL
 save_shading(sirfs_fixed_normal, fixedSH, syn_image_mask_test, path = output_path+'val/', name = 'PREDICTED_SIRFS_NORMAL', shadingFromNet = True, Predicted = True)
