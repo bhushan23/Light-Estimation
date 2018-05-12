@@ -33,9 +33,9 @@ gan_epochs = 200
 syn_epochs = 100
 exp_name = 'resnet_SfSNet'
 LOCAL_MACHINE = False
-output_path = './resnet_SfSNet_Test/'
-synthetic_image_dataset_path = './data/synHao_T/'
-sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImageTest/'   #scripts/SfsNet_SynImage_back/'
+output_path = './resnet_SfSNet/'
+synthetic_image_dataset_path = './data/synHao/'
+sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImages/'   #scripts/SfsNet_SynImage_back/'
 if LOCAL_MACHINE:
     real_image_dataset_path = '../../Light-Estimation/datasets/realImagesSH/'
 else:
