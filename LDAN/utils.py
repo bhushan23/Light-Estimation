@@ -1,6 +1,8 @@
-import matplotlib.pyplot as plt
 import torchvision.utils as tutils
 import imageio
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 from matplotlib.pyplot import imshow
 from PIL import Image
 import numpy as np

@@ -25,17 +25,17 @@ from train import *
 
 SHOW_IMAGES = False
 load_syn = True
-load_GAN = False #True
+load_GAN = True
 train_syn = False
-train_GAN = True #False
+train_GAN = False
 FirstRun = False
 gan_epochs = 200
-syn_epochs = 10
+syn_epochs = 100
 exp_name = 'resnet_SfSNet'
 LOCAL_MACHINE = False
-output_path = './resnet_SfSNet/'
-synthetic_image_dataset_path = './data/synHao/'
-sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImages/'   #scripts/SfsNet_SynImage_back/'
+output_path = './resnet_SfSNet_Test/'
+synthetic_image_dataset_path = './data/synHao_T/'
+sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImageTest/'   #scripts/SfsNet_SynImage_back/'
 if LOCAL_MACHINE:
     real_image_dataset_path = '../../Light-Estimation/datasets/realImagesSH/'
 else:
@@ -65,7 +65,6 @@ def save_shading(normal, sh, real_image_mask, path, name, shadingFromNet = False
     if Predicted == False:
         normal = denorm(normal)
     outShadingB = ShadingFromDataLoading(normal, sh, shadingFromNet = True)
-    #if real_image_mask != None:
     if Predicted == True:
         outShadingB = denorm(outShadingB)
     outShadingB = applyMask(outShadingB, real_image_mask)
@@ -73,7 +72,24 @@ def save_shading(normal, sh, real_image_mask, path, name, shadingFromNet = False
     #pic = torchvision.utils.make_grid(outShadingB, padding=1)
     save_image(outShadingB, path + name+'.png')
     save_image(outShadingB[0], path + name+'_0.png')
+    return outShadingB
 
+def to_numpy(v):
+    return v.cpu().data.numpy()
+
+def save_results_h5(true_fixed_normal, sirfs_fixed_normal, tfSH, fSH, mask, output_path):
+    hf = h5py.File(output_path+'results.h5', 'w')
+    t_f_normal = true_fixed_normal #denorm(true_fixed_normal)
+    s_f_normal = sirfs_fixed_normal #denorm(sirfs_fixed_normal)
+    t_f_normal = applyMask(t_f_normal, mask)
+    #s_f_normal = applyMask(s_f_normal, mask)
+
+    hf.create_dataset('true_normal', data = to_numpy(t_f_normal))
+    hf.create_dataset('sirfs_normal', data = to_numpy(s_f_normal))
+    hf.create_dataset('expected_sh', data = tfSH)
+    hf.create_dataset('predicted_sh', data = fSH)
+    hf.create_dataset('mask', data = to_numpy(var(mask)))
+    hf.close()
 
 def var(x):
     if IS_CUDA:
@@ -95,38 +111,39 @@ real_image, real_normal, real_sh, real_shading, mask, sirfs_shading, sirfs_norma
 #if SHOW_IMAGES:
 
 real_image_mask_test = next(iter(mask_val))
-utils.save_image(torchvision.utils.make_grid(real_image_mask_test*255, padding=1), output_path+'images/MASK_TEST.png')
+#utils.save_image(torchvision.utils.make_grid(real_image_mask_test*255, padding=1), output_path+'val/MASK_TEST.png')
 
-tmp = next(iter(syn_image1))
-utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_path+'images/test_synthetic_img.png')
+tmp = var(next(iter(syn_image1)))
+tmp = denorm(tmp).data
+utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_path+'val/test_synthetic_img.png')
 
 tmp = var(next(iter(real_image_val)))
 tmp = denorm(tmp)
 print(tmp.data.shape)
 tmp = applyMask(tmp, real_image_mask_test)
-utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_real_image.png')
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'val/test_real_image.png')
 
 tmp = var(next(iter(real_normal_val)))
 tmp = denorm(tmp)
 tmp = applyMask(tmp, real_image_mask_test)
-utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_real_normal.png')
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'val/test_real_normal.png')
 
 
 tmp = var(next(iter(sirfs_normal_val)))
 tmp = denorm(tmp)
 tmp = applyMask(tmp, real_image_mask_test)
-utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_sirf_normal.png')
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'val/test_sirf_normal.png')
 
 tmp = var(next(iter(sirfs_shading_val)))
-tmp = denorm(tmp)
+#tmp = denorm(tmp)
 tmp = applyMask(tmp, real_image_mask_test)
-utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'images/test_sirf_shading.png')
+utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'val/test_sirf_shading.png')
 
 
 tmp = var(next(iter(real_shading_val)))
 tmp = denorm(tmp)
 tmp = applyMask(tmp, real_image_mask_test)
-utils.save_image(torchvision.utils.make_grid(tmp.data*255, padding=1), output_path+'images/test_real_shading.png')
+utils.save_image(torchvision.utils.make_grid(tmp.data*255, padding=1), output_path+'val/test_real_shading.png')
 
 
 ## TRUE SHADING
@@ -181,12 +198,12 @@ if load_GAN:
 
 
 if train_GAN:
-    fs = predictAllSynthetic(featureNet, syn_image1)
+    #fs = predictAllSynthetic(featureNet, syn_image1)
     if real_image_val == None:
         real_image_val = real_image
         sirfs_normal_val = sirfs_SH
 
-    trainGAN(lightingNet, R, D, fs, real_image, sirfs_sh, fixed_input, sirfs_fixed_normal, real_image_mask_test, output_path = output_path, num_epoch = gan_epochs)
+    trainGAN(lightingNet, R, D, featureNet, syn_image1, real_image, sirfs_sh, fixed_input, sirfs_fixed_normal, real_image_mask_test, output_path = output_path, num_epoch = gan_epochs)
     torch.save(lightingNet.state_dict(), output_path+'models/GAN_LNet.pkl')
     torch.save(R.state_dict(),output_path+ 'models/Generator.pkl')
 
@@ -195,9 +212,12 @@ if train_GAN:
 fixedSH = lightingNet(R(fixed_input))
 fixedSH = fixedSH.type(torch.DoubleTensor)
 # print('OUTPUT OF fixedSH:', fixedSH.data.size(), sirfs_fixed_normal.size())
-#print('expected SH:', true_fixed_lighting)
-#print('predicted SH:', fixedSH)
 
+print('expected SH:', true_fixed_lighting)
+print('predicted SH:', fixedSH)
+
+#print(sirfs_fixed_normal)
+#print(true_fixed_normal)
 ## With SIRFS_NORMAL
 save_shading(sirfs_fixed_normal, fixedSH, real_image_mask_test, path = output_path+'val/', name = 'PREDICTED_SIRFS_NORMAL', shadingFromNet = True, Predicted = True)
 
@@ -218,6 +238,8 @@ save_shading(true_fixed_normal, true_fixed_lighting, real_image_mask_test, path 
 fSH = fixedSH.cpu().data.numpy()
 tfSH = true_fixed_lighting.cpu().data.numpy()
 
+save_results_h5(true_fixed_normal, sirfs_fixed_normal, tfSH, fSH, real_image_mask_test, output_path)
+
 pSH = open(output_path+'predicted_sh.csv', 'a')
 eSH = open(output_path+'expected_sh.csv', 'a')
 
@@ -230,7 +252,7 @@ for i in tfSH:
     eSH.write('\n')
 
 print('Generating GIF')
-generate_animation(output_path+'images/', gan_epochs,  exp_name)
+#generate_animation(output_path+'images/', gan_epochs,  exp_name)
 
 
 
@@ -243,10 +265,11 @@ if SHOW_IMAGES:
     dNormal = next(iter(rNormal))
     show(denorm(dNormal[0]))
 '''
-
+'''
 lightingNet = lightingNet.cpu()
 D = D.cpu()
 R = R.cpu()
 torch.save(lightingNet.state_dict(), './CPU_GAN_LNet.pkl')
 torch.save(D.state_dict(), './CPU_Discriminator.pkl')
 torch.save(R.state_dict(), './CPU_Generator.pkl')
+'''

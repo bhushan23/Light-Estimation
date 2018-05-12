@@ -79,10 +79,14 @@ def predictAllSynthetic(fNet, data):
     return fsFeatures
 
 # Training GAN
-def trainGAN(lNet, rNet, D, fs, rData, rLabel, fixed_input, sirfs_fixed_normal, real_image_mask, output_path = './', numDTrainer= 1, numGTrainer = 1, num_epoch = 5):
+def trainGAN(lNet, rNet, D, featureNet, syn_image1, rData, rLabel, fixed_input, sirfs_fixed_normal, real_image_mask, output_path = './', numDTrainer= 1, numGTrainer = 1, num_epoch = 5):
     rNet_opt = torch.optim.Adadelta(rNet.parameters(), lr = 0.0002)
     lNet_opt = torch.optim.Adadelta(lNet.parameters(), lr = 0.0002)
     D_opt    = torch.optim.RMSprop(D.parameters(), lr = 0.0002)
+
+    syn_image_iter = iter(syn_image1)
+    syn_image_len  = len(syn_image_iter)
+    syn_image_cnt  = 0
     firstCallD = False
     firstCallG = False
     for epoch in range(0, num_epoch):
@@ -97,9 +101,16 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, fixed_input, sirfs_fixed_normal, 
             # Train the Discriminator
             for k in range(0, numDTrainer):
                 # Randomly pick fs to train Discriminator
-                rFS = random.randint(0, len(fs)-1)
                 #print fs[rFS].shape
-                D_real = D(fs[rFS])
+                # Get Lighting for Synthetic image
+                if syn_image_cnt == syn_image_len:
+                    syn_image_iter = iter(syn_image1)
+                    syn_image_cnt = 0
+                syn_image_cnt += 1
+                s1 = var(next(syn_image_iter))
+                fs = featureNet(s1)
+
+                D_real = D(fs)
                 #print(D_real.size())
                 #print(image.size())
                 # Pass real data through generator
