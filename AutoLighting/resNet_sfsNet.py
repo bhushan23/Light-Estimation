@@ -24,20 +24,20 @@ from utils import PRINT
 from train import *
 
 SHOW_IMAGES = False
-load_syn    = False #True
+load_syn    = True
 load_real   = False #True
 load_AE     = False
-train_syn   = True #False
+train_syn   = False
 train_real  = True #False
 train_AE    = True #False
-FirstRun    = False #True
-real_epochs = 200
-syn_epochs  = 200
+FirstRun    = False
+real_epochs = 400
+syn_epochs  = 400
 vae_epochs  = 200
 
 LOCAL_MACHINE = False
-exp_name      = 'basicNet_AE'
-output_path   = './basicNet_AE/'
+exp_name      = 'resNet_AE'
+output_path   = './resNet_AE/'
 
 synthetic_data_path = '/home/bsonawane/Thesis/LightEstimation/Light-Estimation/data/AE/syn/'  #'/home/bhushan/college/CV/Thesis/Projects/lightestimation/Light-Estimation/data/AE/syn/'
 real_data_path      = '/home/bsonawane/Thesis/LightEstimation/Light-Estimation/data/AE/real/'   #'/home/bhushan/college/CV/Thesis/Projects/lightestimation/Light-Estimation/data/AE/real/'
@@ -134,10 +134,11 @@ tmp = tmp.data
 utils.save_image(torchvision.utils.make_grid(tmp, padding=1), output_path+'images/Validation_SIRFS_SHADING.png')
 '''
 
-# featureNet = ResNet(BasicBlock, [2, 2, 2, 2], 27)
-featureNet = models.BaseSimpleFeatureNet()
+featureNet = models.ResNet(models.BasicBlock, [2, 2, 2, 2], 27)
+#featureNet = models.BaseSimpleFeatureNet()
 lightingNet = models.LightingNet()
-featureNet_real = models.BaseSimpleFeatureNet()
+featureNet_real = models.ResNet(models.BasicBlock, [2, 2, 2, 2], 27)
+#featureNet_real = models.BaseSimpleFeatureNet()
 lightingNet_real = models.LightingNet()
 vae = models.VAutoEncoder()
 
@@ -234,4 +235,4 @@ for i in tfSH:
     eSH.write('\n')
 '''
 print('Generating GIF')
-#generate_animation(output_path+'images/', gan_epochs,  exp_name)
+generate_animation(output_path+'images/', gan_epochs,  exp_name)

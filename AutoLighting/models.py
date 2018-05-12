@@ -200,7 +200,7 @@ class VAutoEncoder(nn.Module):
             nn.Linear(64, 128),
             nn.ReLU(),
             nn.Linear(128, 155),
-            nn.Sigmoid())
+            )
 
     def reparameterize(self, mu, log_var):
         """"z = mean + eps * sigma where eps is sampled from N(0, 1)."""

@@ -52,8 +52,8 @@ def feature_net_train(fNet, lNet, image, label, output_path = '', normal = None,
         print('Epoch:', epoch, 'Loss:', tLoss.data[0])
         if training_real == True:
             fixedSH = lNet(fNet(fixed_input))
-            outShadingB = ShadingFromDataLoading(fixed_input, fixedSH, shadingFromNet = True)
-            outShadingB = denorm(outShadingB)
+            outShadingB = ShadingFromDataLoading(denorm(fixed_input), fixedSH, shadingFromNet = True)
+            # outShadingB = denorm(outShadingB)
             outShadingB = applyMask(outShadingB, fixed_mask)
             outShadingB = outShadingB.data
             save_image(outShadingB, output_path+'images/image_{}.png'.format(epoch))
@@ -117,11 +117,11 @@ def trainVAE(vNet, fNet, images, noisy_sh, true_sh, batch_size = 64, num_epochs 
             input = var(input)
             output, mu, log_var = vNet(input)
 
-            reconst_loss = F.binary_cross_entropy(output, expected_output, size_average=False)
+            #reconst_loss = F.binary_cross_entropy(output, expected_output, size_average=False)
             kl_divergence = torch.sum(0.5 * (mu**2 + torch.exp(log_var) - log_var -1))
 
             # Backprop + Optimize
-            total_loss = reconst_loss + kl_divergence
+            total_loss = kl_divergence
             vNet_opt.zero_grad()
             total_loss.backward()
             vNet_opt.step()
