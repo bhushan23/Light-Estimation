@@ -26,7 +26,7 @@ dtype = torch.cuda.FloatTensor ## UNCOMMENT THIS LINE IF YOU'RE ON A GPU!
 
 
 # Feature Net Training
-def feature_net_train(fNet, lNet, image, label, output_path = '', normal = None, fixed_input = None, training_real = False, num_epochs = 3):
+def feature_net_train(fNet, lNet, image, label, output_path = '', normal = None, fixed_input = None, fixed_mask = None, training_real = False, num_epochs = 3):
     fOpt = torch.optim.Adam(fNet.parameters(), lr = 0.0002)
     lOpt = torch.optim.Adam(lNet.parameters(), lr = 0.0002)
     
@@ -50,11 +50,11 @@ def feature_net_train(fNet, lNet, image, label, output_path = '', normal = None,
             lOpt.step()
             tLoss += Floss
         print('Epoch:', epoch, 'Loss:', tLoss.data[0])
-        if normal != None and input != None:
+        if training_real == True:
             fixedSH = lNet(fNet(fixed_input))
-            outShadingB = ShadingFromDataLoading(input, fixedSH, shadingFromNet = True)
+            outShadingB = ShadingFromDataLoading(fixed_input, fixedSH, shadingFromNet = True)
             outShadingB = denorm(outShadingB)
-            outShadingB = applyMask(outShadingB, real_image_mask)
+            outShadingB = applyMask(outShadingB, fixed_mask)
             outShadingB = outShadingB.data
             save_image(outShadingB, output_path+'images/image_{}.png'.format(epoch))
     # No need to return
@@ -126,7 +126,7 @@ def trainVAE(vNet, fNet, images, noisy_sh, true_sh, batch_size = 64, num_epochs 
             total_loss.backward()
             vNet_opt.step()
 
-        print 'Epoch [{}/{}], VAE Loss: {}'.format(epoch+1, num_epochs, total_loss)
+        print 'Epoch [{}/{}], VAE Loss: {}'.format(epoch+1, num_epochs, total_loss.data[0])
 
         if epoch+1 % 100 == 0:
             torch.save(vNet.state_dict(), output_path+'savedModels/vNet_'+str(epoch/100)+'.pkl')
