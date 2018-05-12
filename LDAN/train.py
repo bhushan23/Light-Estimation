@@ -53,6 +53,11 @@ def syn_net_train(fNet, lNet, syn_image1, syn_image2, syn_label, num_epochs = 3)
             lOpt.step()
             tLoss += Floss
         print('Epoch:', epoch, 'Loss:', tLoss.data[0])
+        if epoch+1 % 100 == 0:
+            torch.save(fNet.state_dict(), output_path+'savedModels/fNet_'+str(epoch/100)+'.pkl')
+            torch.save(lNet.state_dict(), output_path+'savedModels/lNet_'+str(epoch/100)+'.pkl')
+
+
     # No need to return
     # return fNet, lNet
 
@@ -91,7 +96,7 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, fixed_input, sirfs_fixed_normal, 
             #print batch_size
             # Train the Discriminator
             for k in range(0, numDTrainer):
-                # Randomly peack fs to train Discriminator
+                # Randomly pick fs to train Discriminator
                 rFS = random.randint(0, len(fs)-1)
                 #print fs[rFS].shape
                 D_real = D(fs[rFS])
@@ -106,7 +111,7 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, fixed_input, sirfs_fixed_normal, 
                 D_real_loss = GAN_loss(D_real)
                 D_fake_loss = GAN_loss(D_fake)
                 #print 'DLOSS:', D_real_loss.data[0], ' ', D_fake_loss.data[0]
-                D_loss = D_real_loss - D_fake_loss # -ve as we need to maximize
+                D_loss = -D_real_loss + D_fake_loss # -ve as we need to maximize
 
                 # Backprop Discriminator
                 D.zero_grad()
@@ -154,7 +159,7 @@ def trainGAN(lNet, rNet, D, fs, rData, rLabel, fixed_input, sirfs_fixed_normal, 
 
         if epoch+1 % 100 == 0:
             torch.save(lNet.state_dict(), output_path+'savedModels/GAN_LNet_'+str(epoch/100)+'.pkl')
-            torch.save(D.state_dict(), output_path+'savedModels/Discriminator._'+str(epoch/100)+'pkl')
+            torch.save(D.state_dict(), output_path+'savedModels/Discriminator_'+str(epoch/100)+'.pkl')
             torch.save(rNet.state_dict(), output_path+'savedModels/Generator_'+str(epoch/100)+'.pkl')
 
 
