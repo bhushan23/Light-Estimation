@@ -187,14 +187,16 @@ class VAutoEncoder(nn.Module):
        super(VAutoEncoder, self).__init__()
        self.encoder = nn.Sequential(
             nn.Linear(155, 128),
-            #nn.BatchNorm1d(128),
+            nn.BatchNorm1d(128),
             nn.LeakyReLU(0.2),
-            nn.Linear(128, 64))
-            #nn.BatchNorm1d(64),
-            #nn.LeakyReLU(0.2),
-            #nn.Linear(64, 32))
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.LeakyReLU(0.2),
+            nn.Linear(64, 32))
 
        self.decoder = nn.Sequential(
+            nn.Linear(16, 32),
+            nn.ReLU(),
             nn.Linear(32, 64),
             nn.ReLU(),
             nn.Linear(64, 128),

@@ -49,11 +49,11 @@ def feature_net_train(fNet, lNet, image, label, output_path = '', normal = None,
             fOpt.step()
             lOpt.step()
             tLoss += Floss
-        print('Epoch:', epoch, 'Loss:', tLoss.data[0])
+        print('Epoch:', epoch, 'Total Loss:', tLoss.data[0], 'Loss:', Floss.data[0])
         if training_real == True:
             fixedSH = lNet(fNet(fixed_input))
-            outShadingB = ShadingFromDataLoading(denorm(fixed_input), fixedSH, shadingFromNet = True)
-            # outShadingB = denorm(outShadingB)
+            outShadingB = ShadingFromDataLoading(fixed_input, fixedSH, shadingFromNet = True)
+            outShadingB = denorm(outShadingB)
             outShadingB = applyMask(outShadingB, fixed_mask)
             outShadingB = outShadingB.data
             save_image(outShadingB, output_path+'images/image_{}.png'.format(epoch))
@@ -105,6 +105,7 @@ def trainVAE(vNet, fNet, images, noisy_sh, true_sh, batch_size = 64, num_epochs 
     vNet_opt = torch.optim.Adadelta(vNet.parameters(), lr = 0.0002)
 
     lighting_features = predict_lighting_features(fNet, images)
+    print('Lighting Para:', lighting_features.shape)
     lighting_features = torch.utils.data.DataLoader(lighting_features, batch_size= batch_size, shuffle = False)
     
     for epoch in range(0, num_epochs):
