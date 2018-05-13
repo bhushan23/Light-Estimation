@@ -15,5 +15,10 @@ def regression_loss(syn1, syn2, label):
     loss = RHO * rLoss + LAMDA * fLoss
     return loss.sum()
 
+def regression_loss_2(syn1, label):
+    rLoss = regression_loss_synthetic(syn1, label)
+    loss = RHO * rLoss
+    return loss.sum()
+
 def GAN_loss(vals):
     return vals.mean()

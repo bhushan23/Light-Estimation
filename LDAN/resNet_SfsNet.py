@@ -25,15 +25,15 @@ from train import *
 
 SHOW_IMAGES = False
 load_syn = True
-load_GAN = True
-train_syn = False
-train_GAN = False
+load_GAN = False #True
+train_syn = True #False
+train_GAN = True
 FirstRun = False
-gan_epochs = 200
-syn_epochs = 100
-exp_name = 'resnet_SfSNet'
+gan_epochs = 50
+syn_epochs = 50
+exp_name = 'resnet_SfSNet_lockLNet'
 LOCAL_MACHINE = False
-output_path = './resnet_SfSNet/'
+output_path = './resnet_SfSNet_lockLNet/'
 synthetic_image_dataset_path = './data/synHao/'
 sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImages/'   #scripts/SfsNet_SynImage_back/'
 if LOCAL_MACHINE:
@@ -141,7 +141,7 @@ utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'
 
 
 tmp = var(next(iter(real_shading_val)))
-tmp = denorm(tmp)
+#tmp = denorm(tmp)
 tmp = applyMask(tmp, real_image_mask_test)
 utils.save_image(torchvision.utils.make_grid(tmp.data*255, padding=1), output_path+'val/test_real_shading.png')
 

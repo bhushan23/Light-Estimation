@@ -52,7 +52,7 @@ def syn_net_train(fNet, lNet, syn_image1, syn_image2, syn_label, num_epochs = 3)
             fOpt.step()
             lOpt.step()
             tLoss += Floss
-        print('Epoch:', epoch, 'Loss:', tLoss.data[0])
+        print('Epoch:', epoch, 'Total Loss:', tLoss.data[0], 'Loss:', Floss.data[0])
         if epoch+1 % 100 == 0:
             torch.save(fNet.state_dict(), output_path+'savedModels/fNet_'+str(epoch/100)+'.pkl')
             torch.save(lNet.state_dict(), output_path+'savedModels/lNet_'+str(epoch/100)+'.pkl')
@@ -81,7 +81,7 @@ def predictAllSynthetic(fNet, data):
 # Training GAN
 def trainGAN(lNet, rNet, D, featureNet, syn_image1, rData, rLabel, fixed_input, sirfs_fixed_normal, real_image_mask, output_path = './', numDTrainer= 1, numGTrainer = 1, num_epoch = 5):
     rNet_opt = torch.optim.Adadelta(rNet.parameters(), lr = 0.0002)
-    lNet_opt = torch.optim.Adadelta(lNet.parameters(), lr = 0.0002)
+    #lNet_opt = torch.optim.Adadelta(lNet.parameters(), lr = 0.0002)
     D_opt    = torch.optim.RMSprop(D.parameters(), lr = 0.0002)
 
     syn_image_iter = iter(syn_image1)
@@ -144,7 +144,7 @@ def trainGAN(lNet, rNet, D, featureNet, syn_image1, rData, rLabel, fixed_input, 
                 G_loss = -GAN_loss(D_fake) + MU * regression_loss_synthetic(G_predict, rL).sum()
                 #G_loss = MU * regressionLossSynthetic(G_predict, rL).sum()
 
-                lNet.zero_grad()
+                #lNet.zero_grad()
                 rNet.zero_grad()
                 if firstCallG == True:
                     G_loss.backward(retain_graph=True)
@@ -152,11 +152,11 @@ def trainGAN(lNet, rNet, D, featureNet, syn_image1, rData, rLabel, fixed_input, 
                 else:
                     G_loss.backward(retain_graph = True)
                 rNet_opt.step()
-                lNet_opt.step()
+                #lNet_opt.step()
             GLoss_D += G_loss.data[0]
             DLoss_D += D_loss.data[0]
 
-        print 'Epoch [{}/{}], Discriminator {}, Generator {}'.format(epoch+1, num_epoch, DLoss_D, GLoss_D)
+        print 'Epoch [{}/{}], Discriminator {}|{}, Generator {}|{}'.format(epoch+1, num_epoch, D_loss.data[0], DLoss_D, G_loss.data[0], GLoss_D)
         # print('I Size:', fixed_input.data.size())
         fixedSH = lNet(rNet(fixed_input))
         # print('OUTPUT OF fixedSH:', fixedSH.data.size(), sirfs_fixed_normal.size())
