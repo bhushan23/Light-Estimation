@@ -31,8 +31,8 @@ train_syn   = False
 train_real  = True #False
 train_AE    = True #False
 FirstRun    = False
-real_epochs = 400
-syn_epochs  = 400
+real_epochs = 200
+syn_epochs  = 200
 vae_epochs  = 200
 
 LOCAL_MACHINE = False
@@ -235,4 +235,4 @@ for i in tfSH:
     eSH.write('\n')
 '''
 print('Generating GIF')
-generate_animation(output_path+'images/', gan_epochs,  exp_name)
+generate_animation(output_path+'images/', real_epochs,  exp_name)

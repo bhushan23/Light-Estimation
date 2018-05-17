@@ -97,10 +97,10 @@ def load_synthetic_ldan_data(path, batch_size = 64):
     # LDAN works on two frontal pose having same SH: Returning both image set
     return synImage1, synImage2, synLabel
 
-def load_real_images_celebA(path, validation = False, batch_size = 64):
+def load_real_images_celebA(path, validation = False, load_mask = False, batch_size = 64):
     h5Files = get_h5_file_names(path)
     if len(h5Files) == 0:
-        PRINT('NO H5 FILE FOUND FOR SYNTHETIC IMAGES', 'WARNING')
+        PRINT('NO H5 FILE FOUND FOR REAL IMAGES', 'WARNING')
         return None
 
     # Load data from H5 Files
@@ -112,7 +112,8 @@ def load_real_images_celebA(path, validation = False, batch_size = 64):
         lighting1 = hf['/Lighting']
         normal1 = hf['/Normal']
         shading1 = hf['/Shading']
-
+        if load_mask == True:
+            mask1 = hf['/Mask']
         # Following are not need for current experiment
         # PLEASE UNCOMMENT IF YOU NEED
         # height = hf['/Height']
@@ -123,12 +124,20 @@ def load_real_images_celebA(path, validation = False, batch_size = 64):
             lighting = np.array(lighting1[:,:])
             normal = np.array(normal1[:,:,:])
             shading = np.array(shading1[:,:,:])
+            if load_mask == True:
+                mask = np.array(mask1[:,:,:])
+                mask = mask / 255
             firstTime = False
         else:
-            rImage = np.concatenate((rImg, np.array(rImg1[:,:,:])))
+            rImage = np.concatenate((rImage, np.array(rImg1[:,:,:])))
             lighting = np.concatenate((lighting, np.array(lighting1[:,:])))
             normal = np.concatenate((normal, np.array(normal1[:,:,:])))
             shading = np.concatenate((shading, np.array(shading1[:,:,:])))
+            if load_mask == True:
+               mask1 = np.array(mask1[:,:,:])
+               mask1 = mask1 / 255
+               mask =   np.concatenate((mask, mask1))
+
 
     if VERBOSE:
         print('Size of Real data: ', rImage.shape)
@@ -143,7 +152,9 @@ def load_real_images_celebA(path, validation = False, batch_size = 64):
         lighting_val, lighting = np.split(lighting, [batch_size])
         normal_val, normal = np.split(normal, [batch_size])
         shading_val, shading = np.split(shading, [batch_size])
-        
+        if load_mask == True:
+            mask_val, mask = np.split(mask, [batch_size])
+
         rImage_val = CustomDataSetLoader(rImage_val, transform = transform)
 
         real_image_val = torch.utils.data.DataLoader(rImage_val, batch_size= batch_size, shuffle = False)
@@ -151,13 +162,17 @@ def load_real_images_celebA(path, validation = False, batch_size = 64):
         sirfs_normal_val = torch.utils.data.DataLoader(normal_val, batch_size= batch_size, shuffle = False)
         sirfs_shading_val = torch.utils.data.DataLoader(shading_val, batch_size= batch_size, shuffle = False)
         lighting_val = torch.utils.data.DataLoader(lighting_val, batch_size= batch_size, shuffle = False)
+        if load_mask == True:
+            mask_val = torch.utils.data.DataLoader(mask_val, batch_size= batch_size, shuffle = False)
+
 
 
     else:
         real_image_val = None
-        sirfs_sh_vak = None
+        sirfs_sh_val = None
         sirfs_normal_val = None
         sirfs_shading_val = None
+        mask_val = None
     # Custom image dataset
     # Normal and Shading is already normalized by SIRFS method
     # So, Normalize only real images
@@ -167,14 +182,19 @@ def load_real_images_celebA(path, validation = False, batch_size = 64):
     realSH = torch.utils.data.DataLoader(lighting, batch_size= batch_size, shuffle = False)
     rNormal = torch.utils.data.DataLoader(normal, batch_size= batch_size, shuffle = False)
     rShading = torch.utils.data.DataLoader(shading, batch_size= batch_size, shuffle = False)
+    if load_mask == True:
+        mask = torch.utils.data.DataLoader(mask, batch_size= batch_size, shuffle = False)
     
+    if load_mask == False:
+        mask = None
+        mask_val = None
     PRINT('Loading CelebA Real Images Completed')
     # Following are not need for current experiment
     # PLEASE UNCOMMENT IF YOU NEED
     # rHeight = torch.utils.data.DataLoader(height, batch_size= batch_size, shuffle = False)
     # rReflectance = torch.utils.data.DataLoader(reflectance, batch_size= batch_size, shuffle = False)
     # rFinalLoss = torch.utils.data.DataLoader(finalLoss, batch_size= batch_size, shuffle = False)
-    return realImage, rNormal, realSH, rShading, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val
+    return realImage, rNormal, realSH, rShading, mask, real_image_val, sirfs_sh_val, sirfs_normal_val, sirfs_shading_val, mask_val
 
 
    

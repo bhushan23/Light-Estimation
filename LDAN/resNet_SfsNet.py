@@ -24,16 +24,16 @@ from utils import PRINT
 from train import *
 
 SHOW_IMAGES = False
-load_syn = True
-load_GAN = True
-train_syn = False
-train_GAN = False
-FirstRun = False
-gan_epochs = 200
-syn_epochs = 100
-exp_name = 'resnet_SfSNet'
+load_syn = False
+load_GAN = False #True
+train_syn = True
+train_GAN = True
+FirstRun = True
+gan_epochs = 50
+syn_epochs = 200
+exp_name = 'resnet_SfSNet2'
 LOCAL_MACHINE = False
-output_path = './resnet_SfSNet/'
+output_path = './resnet_SfSNet_3/'
 synthetic_image_dataset_path = './data/synHao/'
 sfs_net_path = '/home/bsonawane/Thesis/LightEstimation/SIRFS/synImages/'   #scripts/SfsNet_SynImage_back/'
 if LOCAL_MACHINE:
@@ -141,7 +141,7 @@ utils.save_image(torchvision.utils.make_grid(tmp.data, padding=1), output_path+'
 
 
 tmp = var(next(iter(real_shading_val)))
-tmp = denorm(tmp)
+#tmp = denorm(tmp)
 tmp = applyMask(tmp, real_image_mask_test)
 utils.save_image(torchvision.utils.make_grid(tmp.data*255, padding=1), output_path+'val/test_real_shading.png')
 
@@ -203,7 +203,7 @@ if train_GAN:
         real_image_val = real_image
         sirfs_normal_val = sirfs_SH
 
-    trainGAN(lightingNet, R, D, featureNet, syn_image1, real_image, sirfs_sh, fixed_input, sirfs_fixed_normal, real_image_mask_test, output_path = output_path, num_epoch = gan_epochs)
+    trainGAN(lightingNet, R, D, featureNet, syn_image1, real_image, sirfs_sh, fixed_input, sirfs_fixed_normal, real_image_mask_test, true_fixed_lighting, output_path = output_path, num_epoch = gan_epochs)
     torch.save(lightingNet.state_dict(), output_path+'models/GAN_LNet.pkl')
     torch.save(R.state_dict(),output_path+ 'models/Generator.pkl')
 
@@ -216,9 +216,17 @@ fixedSH = fixedSH.type(torch.DoubleTensor)
 print('expected SH:', true_fixed_lighting)
 print('predicted SH:', fixedSH)
 
+syn_sh_out = lightingNet(featureNet(fixed_input))
+syn_sh_out = syn_sh_out.type(torch.DoubleTensor)
+
+
 #print(sirfs_fixed_normal)
 #print(true_fixed_normal)
 ## With SIRFS_NORMAL
+save_shading(sirfs_fixed_normal, syn_sh_out, real_image_mask_test, path = output_path+'val/', name = 'PREDICTED_SYN_SIRFS_NORMAL', shadingFromNet = True, Predicted = True)
+
+save_shading(true_fixed_normal, syn_sh_out, real_image_mask_test, path = output_path+'val/', name = 'PREDICTED__SYN_TRUE_NORMAL', shadingFromNet = True, Predicted = True)
+
 save_shading(sirfs_fixed_normal, fixedSH, real_image_mask_test, path = output_path+'val/', name = 'PREDICTED_SIRFS_NORMAL', shadingFromNet = True, Predicted = True)
 
 ## With True Normal
