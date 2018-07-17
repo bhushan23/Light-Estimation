@@ -46,12 +46,12 @@ We have -
      * Conclusion- Although results are not better than SIRFS estimated shading, we can see domain being adapted
      
    4. AutoLighting
-     * This was to compare domain adaptaion with respect to denoising autoencoder
-     * Steps - 
+      * This was to compare domain adaptaion with respect to denoising autoencoder
+      * Steps - 
          1. Generate Noisy SH using SIRFS method on SfSNet data
          2. Train denoising autoencoder to denoise SH
          3. Use trained denoising autoencoder to remove noise from SH on real images SH
          4. Use Use feature net and lighting net to estimate lighting on real images
-      * This approach does not out performs domain adaptation
-      * Conclusion - Synthetic and real images spaces are different and adversarial approach performs well to understand and estimate lighting for real images trained on synthetic images.
+       * This approach does not out performs domain adaptation
+       * Conclusion - Synthetic and real images spaces are different and adversarial approach performs well to understand and estimate lighting for real images trained on synthetic images.
      
