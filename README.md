@@ -56,4 +56,4 @@ We have -
        * Conclusion - Synthetic and real images spaces are different and adversarial approach performs well to understand and estimate lighting for real images trained on synthetic images.
      
 ## Report
-[https://github.com/bhushan23/Light-Estimation/blob/master/Lighting_Estimation_Report.pdf](Project Report)
+[Project Report](https://github.com/bhushan23/Light-Estimation/blob/master/Lighting_Estimation_Report.pdf)
