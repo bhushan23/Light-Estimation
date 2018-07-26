@@ -13,6 +13,8 @@ import h5py
 import pandas as pd
 import random
 import os
+import sys
+sys.path.insert(0, './core')
 
 # Custom import
 import dataLoading
