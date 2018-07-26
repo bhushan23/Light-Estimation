@@ -55,5 +55,9 @@ We have -
        * This approach does not out performs domain adaptation
        * Conclusion - Synthetic and real images spaces are different and adversarial approach performs well to understand and estimate lighting for real images trained on synthetic images.
      
-## Report
+## Slide & Report
+[Slides](https://docs.google.com/presentation/d/1gV0CVkOKcKEz8NGYxGUUY294D6JeLP90Uml0sICShQs/)
+
 [Project Report](https://github.com/bhushan23/Light-Estimation/blob/master/Lighting_Estimation_Report.pdf)
+
+
