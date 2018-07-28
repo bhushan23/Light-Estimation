@@ -55,6 +55,51 @@ We have -
        * This approach does not out performs domain adaptation
        * Conclusion - Synthetic and real images spaces are different and adversarial approach performs well to understand and estimate lighting for real images trained on synthetic images.
      
+## Results
+1. Lighting Estimation for CelebA dataset - trained with LDAN Synthetic dataset
+
+![Real Image input](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp1_celeba/test_syn_image.png)
+
+|![SIRFS generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp1_celeba/test_sirf_shading.png)|![LDAN generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp1_celeba/image_49.png)|
+|:---:|:---:|
+|Shading by SIRFS|Shading by LDAN(ours)|
+
+|![LDAN generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp1_celeba/image_49.png)|![Without domain adaptation](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp1_celeba/PREDICTED_SYN_SIRFS_NORMAL.png)|
+|:---:|:---:|
+|Shading with Domain Adaptation|Shading without Domain Adaptation|
+
+2. Lighting Estimation for SfSNet dataset - trained with LDAN Synthetic dataset
+
+![Real Image input](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp2_sfs/test_real_image.png)
+
+|![SIRFS generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp2_sfs/test_sirf_shading.png)|![LDAN generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp2_sfs/PREDICTED_TRUE_NORMAL.png)|
+|:---:|:---:|
+|Shading by SIRFS|Shading by LDAN(ours)|
+
+|![LDAN generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp2_sfs/PREDICTED_TRUE_NORMAL.png)|![Without domain adaptation](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp2_sfs/PREDICTED__SYN_TRUE_NORMAL.png)|
+|:---:|:---:|
+|Shading with Domain Adaptation|Shading without Domain Adaptation|
+
+3. Lighting Estimation for SfSNet dataset - trained with SfSNet Synthetic dataset
+
+![Real Image input](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp3_sfs/test_real_image.png)
+
+|![SIRFS generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp3_sfs/test_sirf_shading.png)|![LDAN generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp3_sfs/PREDICTED_TRUE_NORMAL.png)|
+|:---:|:---:|
+|Shading by SIRFS|Shading by LDAN(ours)|
+
+|![LDAN generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp3_sfs/PREDICTED_TRUE_NORMAL.png)|![Without domain adaptation](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp3_sfs/PREDICTED__SYN_TRUE_NORMAL.png)|
+|:---:|:---:|
+|Shading with Domain Adaptation|Shading without Domain Adaptation|
+
+4. Lighting Estimation by AutoLighting (Denoising AutoEncoder) for CelebA dataset - trained with SfSNet Synthetic dataset
+
+![Real Image input](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp4_autolighting/test_syn_image.png)
+
+|![SIRFS generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp4_autolighting/test_sirf_shading.png)|![LDAN generated shading](https://github.com/bhushan23/Light-Estimation/blob/master/Results/Summary_Images/exp4_autolighting/PREDICTED_SIRFS_NORMAL.png)|
+|:---:|:---:|
+|Shading by SIRFS|Shading by LDAN(ours)|
+
 ## Slide & Report
 [Slides](https://docs.google.com/presentation/d/1gV0CVkOKcKEz8NGYxGUUY294D6JeLP90Uml0sICShQs/)
 
